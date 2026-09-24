@@ -1,0 +1,96 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PARTICIPANT
+  STAFF
+  ADMIN
+}
+
+enum OrganizerCategory {
+  PERFORMANCE_1 // กลุ่มการแสดงที่ 1
+  PERFORMANCE_2 // กลุ่มการแสดงที่ 2
+  PERFORMANCE_3 // กลุ่มการแสดงที่ 3
+  CLUB          // ชุมนุม
+  SAMO          // สโมสร
+}
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  studentId      String    @unique @db.VarChar(20)
+  fullName       String    @db.VarChar(100)
+  lastName       String    @db.VarChar(100)
+  role           Role      @default(PARTICIPANT)
+  
+  // สถานะการเข้าร่วมงาน
+  isCheckedIn    Boolean   @default(false)
+  checkedInAt    DateTime?
+  
+  // Relations
+  redemptions    CouponRedemption[]
+  luckyDrawWins  LuckyDrawWinner[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([studentId, lastName])
+  @@index([isCheckedIn])
+}
+
+model OrganizerCredit {
+  id             String            @id @default(uuid()) @db.Uuid
+  category       OrganizerCategory
+  orderIndex     Int
+  fullName       String            @db.VarChar(100)
+  createdAt      DateTime          @default(now())
+
+  @@index([category, orderIndex])
+}
+
+model Coupon {
+  id             String    @id @default(uuid()) @db.Uuid
+  name           String    @db.VarChar(150)
+  storeName      String    @db.VarChar(100)
+  description    String?   @db.Text
+  totalQuota     Int?      
+  currentRedeemed Int      @default(0)
+  isActive       Boolean   @default(true)
+  
+  redemptions    CouponRedemption[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model CouponRedemption {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid
+  couponId       String    @db.Uuid
+  staffId        String?   @db.Uuid
+  redeemedAt     DateTime  @default(now())
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coupon         Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+
+  // 1 User รับ 1 คูปองได้ครั้งเดียว
+  @@unique([userId, couponId], name: "unique_user_coupon_redemption")
+  @@index([userId])
+  @@index([couponId])
+}
+
+model LuckyDrawWinner {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @unique @db.Uuid
+  prizeName      String    @db.VarChar(150)
+  wonAt          DateTime  @default(now())
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([wonAt])
+}

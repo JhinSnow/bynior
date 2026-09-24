@@ -1,0 +1,36 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bynior_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - QR_HMAC_SECRET=${QR_HMAC_SECRET}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - GOOGLE_SERVICE_ACCOUNT_EMAIL=${GOOGLE_SERVICE_ACCOUNT_EMAIL}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY}
+    networks:
+      - bynior_net
+
+  # Cloudflare Tunnel Service (เชื่อมต่อ Domain จาก Cloudflare ไปยัง Web App โดยตรง ปลอดภัย ไม่ต้องเปิด Port)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: bynior_tunnel
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - bynior_net
+    depends_on:
+      - app
+
+networks:
+  bynior_net:
+    driver: bridge
