@@ -5,17 +5,20 @@
   --foreground: #f8fafc;
 }
 
-* {
-  font-family: var(--font-fc-luxurious), 'FCLuxurious', system-ui, -apple-system, sans-serif !important;
-}
-
 body {
   background: #020617;
   color: #f8fafc;
   min-height: 100vh;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
-  letter-spacing: 0.02em;
+  font-family: var(--font-noto-thai), system-ui, -apple-system, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* ฟอนต์ FC Luxurious ใช้เฉพาะสำหรับ End Credit */
+.font-luxurious,
+.font-luxurious * {
+  font-family: var(--font-fc-luxurious), 'FCLuxurious', serif !important;
 }
 
 @keyframes shake {

@@ -218,7 +218,7 @@ export default function EndCreditTheaterPage() {
   }, [isPlaying]);
 
   return (
-    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none relative">
+    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none relative font-luxurious">
       {/* Hidden YouTube Audio Players */}
       <div className="hidden pointer-events-none">
         <div id="yt-player-1" />
