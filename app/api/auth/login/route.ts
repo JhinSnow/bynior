@@ -4,7 +4,7 @@ import { createSession } from '@/lib/auth';
 import { z } from 'zod';
 
 const loginSchema = z.object({
-  identifier: z.string().min(3), // รูปแบบ 6610210001-ใจดี หรือใส่แยก
+  identifier: z.string().trim(),
 });
 
 export async function POST(req: Request) {
@@ -16,29 +16,55 @@ export async function POST(req: Request) {
     }
 
     const input = parsed.data.identifier.trim();
-    let studentId = '';
-    let lastName = '';
 
-    if (input.includes('-')) {
-      const parts = input.split('-');
-      studentId = parts[0].trim();
-      lastName = parts.slice(1).join('-').trim();
-    } else {
-      studentId = input;
+    // บังคับรูปแบบ: รหัสนักศึกษา-นามสกุล (ต้องมีเครื่องหมายขีด - คั่นกลาง)
+    if (!input.includes('-')) {
+      return NextResponse.json(
+        { error: 'กรุณากรอกในรูปแบบ: รหัสนักศึกษา-นามสกุล (เช่น 6610210001-ใจดี)' },
+        { status: 400 }
+      );
     }
 
-    // ค้นหาในฐานข้อมูล
-    const user = await prisma.user.findFirst({
+    const parts = input.split('-');
+    const studentId = parts[0].trim();
+    const lastName = parts.slice(1).join('-').trim();
+
+    if (!studentId || !lastName) {
+      return NextResponse.json(
+        { error: 'กรุณาระบุทั้งรหัสนักศึกษาและนามสกุลให้ครบถ้วน (เช่น 6610210001-ใจดี)' },
+        { status: 400 }
+      );
+    }
+
+    // ค้นหาในฐานข้อมูลด้วยรหัสนักศึกษา
+    const user = await prisma.user.findUnique({
       where: {
         studentId: studentId,
-        ...(lastName ? { lastName: { contains: lastName, mode: 'insensitive' } } : {}),
       },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: 'ไม่พบข้อมูลผู้มีสิทธิ์เข้าร่วมงาน กรุณาตรวจสอบรหัสนักศึกษาและนามสกุล' },
+        { error: 'ไม่พบรหัสนักศึกษานี้ในรายชื่อผู้มีสิทธิ์เข้าร่วมงาน' },
         { status: 404 }
+      );
+    }
+
+    // ตรวจสอบความถูกต้องของนามสกุล (ต้องตรงกับ lastName หรือเป็นส่วนหนึ่งของ fullName)
+    const cleanDbLastName = user.lastName?.trim().toLowerCase() || '';
+    const cleanInputLastName = lastName.trim().toLowerCase();
+    const cleanDbFullName = user.fullName?.trim().toLowerCase() || '';
+
+    const isMatch =
+      cleanDbLastName === cleanInputLastName ||
+      cleanDbLastName.includes(cleanInputLastName) ||
+      cleanInputLastName.includes(cleanDbLastName) ||
+      cleanDbFullName.endsWith(cleanInputLastName);
+
+    if (!isMatch) {
+      return NextResponse.json(
+        { error: 'นามสกุลไม่ตรงกับรหัสนักศึกษาที่ระบุ กรุณาตรวจสอบและลองใหม่อีกครั้ง' },
+        { status: 400 }
       );
     }
 

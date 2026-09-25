@@ -98,13 +98,18 @@ export default function LoginPage() {
                     type="text"
                     required
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e) => {
+                      setIdentifier(e.target.value);
+                      if (error) setError('');
+                    }}
                     placeholder="เช่น 6610210001-ใจดี"
                     className="w-full px-4 py-3.5 bg-slate-950/60 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base transition-all font-mono"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-2">
-                  * หากพิมพ์ติดกันหรือใส่เฉพาะรหัสนักศึกษาก็สามารถค้นหาได้เช่นกัน
+                <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+                  <span>📌 รูปแบบ:</span>
+                  <span className="text-amber-300 font-mono font-medium">รหัสนักศึกษา-นามสกุล</span>
+                  <span>(ต้องมีเครื่องหมายขีดคั่นกลาง)</span>
                 </p>
               </div>
 
