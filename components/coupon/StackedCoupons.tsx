@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QrCode, CheckCircle2, ChevronDown, Layers, Star, Sparkles } from 'lucide-react';
+import { QrCode, CheckCircle2, Star, Sparkles, UtensilsCrossed } from 'lucide-react';
 import { DynamicQRModal } from './DynamicQRModal';
 
 export interface CouponItem {
@@ -48,140 +48,111 @@ const HOLLYWOOD_SOLID_STYLES = [
 ];
 
 export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
 
   const handleCardClick = (coupon: CouponItem) => {
-    if (!isExpanded) {
-      setIsExpanded(true);
-      return;
-    }
-
     if (coupon.isRedeemed) return;
     setSelectedCoupon(coupon);
   };
 
+  const redeemedCount = coupons.filter((c) => c.isRedeemed).length;
+
   return (
     <div className="w-full">
-      {/* Wallet Controls / State Indicator */}
+      {/* Status Bar */}
       <div className="flex items-center justify-between mb-4 px-1">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400 bg-neutral-900 px-4 py-2 rounded-full border border-amber-500 active:scale-95 transition-all"
-        >
-          <Layers className="w-4 h-4 text-amber-400" />
-          <span>{isExpanded ? 'พับเก็บการ์ด (Stack)' : 'กางดูคูปองทั้งหมด (Unfold)'}</span>
-          <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform duration-300 text-amber-400 ${
-              isExpanded ? 'rotate-180' : ''
-            }`}
-          />
-        </button>
+        <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-300">
+          <UtensilsCrossed className="w-3.5 h-3.5 text-amber-400" />
+          <span>ทั้งหมด {coupons.length} รายการ</span>
+        </div>
 
-        <span className="text-xs font-bold text-neutral-400">
-          ใช้แล้ว {coupons.filter((c) => c.isRedeemed).length}/{coupons.length} สิทธิ์
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-amber-300">
+          ใช้แล้ว {redeemedCount}/{coupons.length} สิทธิ์
         </span>
       </div>
 
-      {/* Cards Deck Container with dynamic responsive height */}
-      <div
-        className="relative transition-all duration-300 ease-out"
-        style={{
-          minHeight: isExpanded
-            ? `${Math.max(280, (coupons.length - 1) * 145 + 170)}px`
-            : `${Math.max(260, (coupons.length - 1) * 45 + 180)}px`,
-          marginBottom: '24px',
-        }}
-      >
+      {/* Spacious Vertical Card Feed (No overlapping stack, ample breathing room) */}
+      <div className="flex flex-col space-y-4">
         <AnimatePresence>
           {coupons.map((coupon, index) => {
             const style = HOLLYWOOD_SOLID_STYLES[index % HOLLYWOOD_SOLID_STYLES.length];
-            const stackY = index * 42;
-            const stackScale = 1 - index * 0.035;
-            const stackZIndex = coupons.length - index;
 
             return (
               <motion.div
                 key={coupon.id}
-                layout
-                initial={false}
-                animate={
-                  isExpanded
-                    ? {
-                        y: index * 135,
-                        scale: 1,
-                        zIndex: 10 + index,
-                      }
-                    : {
-                        y: stackY,
-                        scale: stackScale,
-                        zIndex: stackZIndex,
-                      }
-                }
-                transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25, delay: index * 0.05 }}
+                whileTap={!coupon.isRedeemed ? { scale: 0.98 } : undefined}
                 onClick={() => handleCardClick(coupon)}
-                className={`w-full rounded-3xl p-5 border cursor-pointer select-none relative overflow-hidden transition-all ${
+                className={`w-full rounded-3xl p-5 border select-none transition-all shadow-xl relative overflow-hidden ${
                   coupon.isRedeemed
-                    ? 'bg-neutral-950 border-neutral-800 text-neutral-600 grayscale opacity-60'
-                    : `${style.bg} ${style.border} text-white active:scale-[0.99]`
+                    ? 'bg-neutral-950 border-neutral-800 text-neutral-600 opacity-60 cursor-not-allowed'
+                    : `${style.bg} ${style.border} text-white cursor-pointer hover:shadow-2xl`
                 }`}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: '140px',
-                }}
               >
-                <div className="flex justify-between items-start h-full">
-                  <div className="flex flex-col justify-between h-full pr-4">
+                <div className="flex justify-between items-start gap-4">
+                  {/* Left Info Column */}
+                  <div className="flex flex-col justify-between flex-1 min-h-[96px]">
                     <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className={`text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full ${coupon.isRedeemed ? 'bg-neutral-800 text-neutral-500' : style.badge}`}>
+                      {/* Store & VIP Tags */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span
+                          className={`text-[11px] font-black tracking-wider uppercase px-3 py-0.5 rounded-full shadow-sm ${
+                            coupon.isRedeemed
+                              ? 'bg-neutral-800 text-neutral-500'
+                              : style.badge
+                          }`}
+                        >
                           {coupon.storeName}
                         </span>
                         {!coupon.isRedeemed && (
-                          <span className="text-[10px] text-amber-300 flex items-center gap-0.5 font-bold uppercase tracking-wider">
+                          <span className="text-[10px] text-amber-300 flex items-center gap-1 font-bold uppercase tracking-wider">
                             <Star className="w-2.5 h-2.5 fill-amber-300" />
                             VIP Pass
                           </span>
                         )}
                       </div>
 
-                      <h4 className="text-lg font-black tracking-tight leading-tight line-clamp-1 text-white">
+                      {/* Menu Name */}
+                      <h4 className="text-xl font-black tracking-tight leading-snug text-white">
                         {coupon.name}
                       </h4>
+
+                      {/* Description */}
                       {coupon.description && (
-                        <p className="text-xs text-neutral-300 line-clamp-1 mt-1 font-medium">
+                        <p className="text-xs text-neutral-300 mt-1 font-medium leading-relaxed">
                           {coupon.description}
                         </p>
                       )}
                     </div>
 
-                    <div className="text-[11px] font-bold flex items-center gap-1.5">
+                    {/* Bottom Action / Status Tag */}
+                    <div className="mt-4 text-[11px] font-bold flex items-center">
                       {coupon.isRedeemed ? (
-                        <span className="text-neutral-400 flex items-center gap-1 bg-neutral-900 px-2.5 py-0.5 rounded-full border border-neutral-800">
+                        <span className="text-neutral-400 flex items-center gap-1.5 bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
                           <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />
-                          ใช้สิทธิ์รับอาหารแล้ว
+                          <span>ใช้สิทธิ์รับอาหารแล้ว</span>
                         </span>
                       ) : (
-                        <span className="text-amber-300 bg-black/60 px-2.5 py-0.5 rounded-full border border-amber-500/40 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-amber-400" />
-                          แตะเพื่อเปิด QR Code รับอาหาร
+                        <span className="text-amber-300 bg-black/60 px-3.5 py-1 rounded-full border border-amber-500/50 flex items-center gap-1.5 shadow-sm">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                          <span>แตะเพื่อเปิด QR Code รับอาหาร</span>
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* QR icon / Status */}
+                  {/* Right QR Action Button */}
                   <div className="flex flex-col items-center justify-center shrink-0 self-center">
                     {coupon.isRedeemed ? (
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-600">
-                        <CheckCircle2 className="w-6 h-6" />
+                      <div className="w-14 h-14 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-600">
+                        <CheckCircle2 className="w-7 h-7" />
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded-2xl bg-amber-400 text-black flex items-center justify-center border-2 border-black">
-                        <QrCode className="w-6 h-6 stroke-[2.5]" />
+                      <div className="w-14 h-14 rounded-2xl bg-amber-400 text-black flex items-center justify-center border-2 border-black shadow-lg transition-transform hover:scale-105 active:scale-95">
+                        <QrCode className="w-7 h-7 stroke-[2.5]" />
                       </div>
                     )}
                   </div>
