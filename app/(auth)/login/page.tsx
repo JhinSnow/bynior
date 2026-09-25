@@ -60,7 +60,7 @@ export default function LoginPage() {
               BYENIOR 2026
             </span>
             <span className="text-[10px] tracking-widest text-red-500 uppercase font-bold block">
-              Hollywood Red Carpet Gala
+              Sci-lywood Gala
             </span>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function LoginPage() {
             {/* Top decorative badge */}
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3.5 py-1 bg-red-800 rounded-full border border-amber-400 flex items-center gap-1 text-[10px] font-black text-white uppercase tracking-widest">
               <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
-              <span>Red Carpet Admission</span>
+              <span>Sci-lywood Admission</span>
             </div>
 
             <div className="text-center mb-7 pt-2">
@@ -167,7 +167,7 @@ export default function LoginPage() {
               <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div className="text-xs text-neutral-200">
                 <p className="font-bold text-amber-400 mb-0.5 uppercase tracking-wide">
-                  ยืนยันการเช็คชื่อเข้างาน Red Carpet
+                  ยืนยันการเช็คชื่อเข้างาน Sci-lywood
                 </p>
                 <p className="text-neutral-400">
                   ระบบได้บันทึกเวลาเข้าร่วมงานของคุณเรียบร้อยแล้ว พร้อมรับสิทธิ์คูปองอาหารและร่วมลุ้นรางวัล Lucky Draw

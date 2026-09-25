@@ -137,7 +137,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Admin Footer */}
       <footer className="text-center text-xs text-neutral-600 py-4 border-t border-neutral-900 uppercase tracking-widest">
-        Byenior 2026 • Hollywood Gala Event Management Portal
+        Byenior 2026 • Sci-lywood Gala Event Management Portal
       </footer>
     </div>
   );

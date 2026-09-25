@@ -203,7 +203,7 @@ export default function ActivitiesPage() {
             </div>
 
             <h3 className="text-2xl font-black text-white mb-1 uppercase tracking-wider">
-              Hollywood Gala Award Lucky Draw
+              Sci-lywood Gala Award Lucky Draw
             </h3>
             <p className="text-xs text-neutral-400 mb-6">
               ระบบสุ่มผู้โชคดีเฉพาะผู้ที่ผ่านการเช็คชื่อเข้างานและยังไม่เคยได้รับรางวัล
