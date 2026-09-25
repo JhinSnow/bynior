@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QrCode, CheckCircle2, Star, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { QrCode, CheckCircle2, Star, Sparkles, UtensilsCrossed, Layers, ChevronDown } from 'lucide-react';
 import { DynamicQRModal } from './DynamicQRModal';
 
 export interface CouponItem {
@@ -48,53 +48,104 @@ const HOLLYWOOD_SOLID_STYLES = [
 ];
 
 export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
+  // Starts expanded by default so users see all coupons, with smooth folding capability
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [selectedCoupon, setSelectedCoupon] = useState<CouponItem | null>(null);
 
   const handleCardClick = (coupon: CouponItem) => {
+    // If cards are folded, clicking any card smoothly unfolds the deck
+    if (!isExpanded) {
+      setIsExpanded(true);
+      return;
+    }
+
     if (coupon.isRedeemed) return;
     setSelectedCoupon(coupon);
   };
 
   const redeemedCount = coupons.filter((c) => c.isRedeemed).length;
 
+  // Layout parameters
+  const CARD_HEIGHT = 150;
+  const EXPANDED_GAP = 20; // 20px clean gap between cards in expanded view (no tight scrolling!)
+  const EXPANDED_STEP = CARD_HEIGHT + EXPANDED_GAP; // 170px
+  const COLLAPSED_STEP = 50; // 50px peek per card in collapsed view
+
+  const totalExpandedHeight = Math.max(CARD_HEIGHT, (coupons.length - 1) * EXPANDED_STEP + CARD_HEIGHT);
+  const totalCollapsedHeight = Math.max(CARD_HEIGHT, (coupons.length - 1) * COLLAPSED_STEP + CARD_HEIGHT);
+
+  const springTransition = {
+    type: 'spring',
+    stiffness: 240,
+    damping: 24,
+    mass: 0.8,
+  };
+
   return (
     <div className="w-full">
-      {/* Status Bar */}
+      {/* Wallet Controls / State Toggle Bar */}
       <div className="flex items-center justify-between mb-4 px-1">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-300">
-          <UtensilsCrossed className="w-3.5 h-3.5 text-amber-400" />
-          <span>ทั้งหมด {coupons.length} รายการ</span>
-        </div>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400 bg-neutral-900 hover:bg-neutral-850 px-4 py-2 rounded-full border border-amber-500/60 shadow-md active:scale-95 transition-all"
+        >
+          <Layers className="w-4 h-4 text-amber-400" />
+          <span>{isExpanded ? 'พับเก็บคูปองทั้งหมด' : 'กางดูคูปองทั้งหมด'}</span>
+          <ChevronDown
+            className={`w-3.5 h-3.5 transition-transform duration-300 text-amber-400 ${
+              isExpanded ? 'rotate-180' : ''
+            }`}
+          />
+        </button>
 
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-amber-300">
           ใช้แล้ว {redeemedCount}/{coupons.length} สิทธิ์
         </span>
       </div>
 
-      {/* Spacious Vertical Card Feed (No overlapping stack, ample breathing room) */}
-      <div className="flex flex-col space-y-4">
+      {/* Cards Deck Container with Smooth Dynamic Height Spring Animation */}
+      <motion.div
+        className="relative will-change-[height]"
+        initial={false}
+        animate={{
+          height: isExpanded ? totalExpandedHeight : totalCollapsedHeight,
+        }}
+        transition={springTransition}
+      >
         <AnimatePresence>
           {coupons.map((coupon, index) => {
             const style = HOLLYWOOD_SOLID_STYLES[index % HOLLYWOOD_SOLID_STYLES.length];
+            const collapsedY = index * COLLAPSED_STEP;
+            const expandedY = index * EXPANDED_STEP;
+            const collapsedScale = 1 - index * 0.025;
+            const collapsedZ = coupons.length - index;
+            const expandedZ = 10 + index;
 
             return (
               <motion.div
                 key={coupon.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.25, delay: index * 0.05 }}
-                whileTap={!coupon.isRedeemed ? { scale: 0.98 } : undefined}
+                layout
+                initial={false}
+                animate={{
+                  y: isExpanded ? expandedY : collapsedY,
+                  scale: isExpanded ? 1 : collapsedScale,
+                  zIndex: isExpanded ? expandedZ : collapsedZ,
+                }}
+                transition={springTransition}
+                whileTap={!coupon.isRedeemed ? { scale: isExpanded ? 0.98 : 0.99 } : undefined}
                 onClick={() => handleCardClick(coupon)}
-                className={`w-full rounded-3xl p-5 border select-none transition-all shadow-xl relative overflow-hidden ${
+                className={`w-full rounded-3xl p-5 border select-none transition-shadow shadow-xl absolute top-0 left-0 right-0 overflow-hidden cursor-pointer ${
                   coupon.isRedeemed
-                    ? 'bg-neutral-950 border-neutral-800 text-neutral-600 opacity-60 cursor-not-allowed'
-                    : `${style.bg} ${style.border} text-white cursor-pointer hover:shadow-2xl`
+                    ? 'bg-neutral-950 border-neutral-800 text-neutral-600 opacity-60'
+                    : `${style.bg} ${style.border} text-white hover:shadow-2xl`
                 }`}
+                style={{
+                  height: `${CARD_HEIGHT}px`,
+                }}
               >
-                <div className="flex justify-between items-start gap-4">
+                <div className="flex justify-between items-start gap-4 h-full">
                   {/* Left Info Column */}
-                  <div className="flex flex-col justify-between flex-1 min-h-[96px]">
+                  <div className="flex flex-col justify-between flex-1 h-full pr-2">
                     <div>
                       {/* Store & VIP Tags */}
                       <div className="flex items-center gap-2 mb-2">
@@ -116,20 +167,20 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
                       </div>
 
                       {/* Menu Name */}
-                      <h4 className="text-xl font-black tracking-tight leading-snug text-white">
+                      <h4 className="text-xl font-black tracking-tight leading-snug text-white line-clamp-1">
                         {coupon.name}
                       </h4>
 
                       {/* Description */}
                       {coupon.description && (
-                        <p className="text-xs text-neutral-300 mt-1 font-medium leading-relaxed">
+                        <p className="text-xs text-neutral-300 mt-1 font-medium line-clamp-1">
                           {coupon.description}
                         </p>
                       )}
                     </div>
 
                     {/* Bottom Action / Status Tag */}
-                    <div className="mt-4 text-[11px] font-bold flex items-center">
+                    <div className="text-[11px] font-bold flex items-center">
                       {coupon.isRedeemed ? (
                         <span className="text-neutral-400 flex items-center gap-1.5 bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
                           <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />
@@ -161,7 +212,7 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
             );
           })}
         </AnimatePresence>
-      </div>
+      </motion.div>
 
       {/* Dynamic QR Modal */}
       {selectedCoupon && (
