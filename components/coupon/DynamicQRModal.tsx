@@ -46,12 +46,13 @@ export function DynamicQRModal({
       const remaining = Math.max(0, data.expiresAt - nowEpoch);
       setTimeLeft(remaining > 0 ? remaining : 45);
 
-      // สร้าง Data URL QR Code ความละเอียดสูง
+      // สร้าง Data URL QR Code คมชัด สแกนติดง่ายที่สุด
       const url = await QRCode.toDataURL(data.token, {
-        width: 320,
-        margin: 2,
+        width: 360,
+        margin: 1,
+        errorCorrectionLevel: 'M',
         color: {
-          dark: '#0f172a',
+          dark: '#000000',
           light: '#ffffff',
         },
       });

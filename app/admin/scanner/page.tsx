@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, CheckCircle2, AlertCircle, RefreshCw, X, ShieldCheck } from 'lucide-react';
+import { Camera, CheckCircle2, AlertCircle, RefreshCw, X, ShieldCheck, SwitchCamera, Upload, Keyboard } from 'lucide-react';
 
 interface VerifyData {
   user: {
@@ -25,22 +25,57 @@ export default function StaffScannerPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Cameras list
+  const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraId, setSelectedCameraId] = useState<string>('');
+  const [manualToken, setManualToken] = useState<string>('');
+  const [showManualInput, setShowManualInput] = useState<boolean>(false);
+
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const isVerifyingRef = useRef<boolean>(false);
 
+  // ค้นหากล้องทั้งหมดที่มีในเครื่อง
+  useEffect(() => {
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        if (devices && devices.length) {
+          setCameras(devices);
+          // เลือกล้องหลังเป็นค่าเริ่มต้น หรือตัวสุดท้าย (มักเป็นกล้องหลังบนมือถือ)
+          const backCam = devices.find((d) => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('environment'));
+          setSelectedCameraId(backCam ? backCam.id : devices[devices.length - 1].id);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not enumerate cameras:', err);
+      });
+  }, []);
+
   // เริ่มกล้อง
-  const startCamera = async () => {
+  const startCamera = async (overrideCameraId?: string) => {
     setCameraError('');
     setFeedback(null);
+
+    // หยุดกล้องเดิมก่อนถ้าเปิดอยู่
+    if (scannerRef.current && scannerRef.current.isScanning) {
+      await stopCamera();
+    }
+
     try {
       const html5QrCode = new Html5Qrcode('qr-reader-container');
       scannerRef.current = html5QrCode;
 
+      const camId = overrideCameraId || selectedCameraId;
+      const cameraConfig = camId ? camId : { facingMode: 'environment' };
+
       await html5QrCode.start(
-        { facingMode: 'environment' }, // กล้องหลังของสมาร์ตโฟน
+        cameraConfig,
         {
-          fps: 15,
-          qrbox: { width: 250, height: 250 },
+          fps: 20,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const edge = Math.floor(minEdge * 0.75);
+            return { width: edge, height: edge };
+          },
           aspectRatio: 1.0,
         },
         async (decodedText) => {
@@ -49,13 +84,20 @@ export default function StaffScannerPage() {
           handleScanSuccess(decodedText);
         },
         () => {
-          // Frame scan error (normal continuous polling)
+          // Continuous frame polling
         }
       );
       setScanning(true);
     } catch (err: any) {
       console.error('Camera start error:', err);
-      setCameraError('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตสิทธิ์การใช้กล้องในเบราว์เซอร์');
+      // ลอง fallback เปิดกล้องตัวแรก
+      if (!overrideCameraId && cameras.length > 0) {
+        try {
+          await startCamera(cameras[0].id);
+          return;
+        } catch {}
+      }
+      setCameraError('ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตสิทธิ์การใช้กล้องในเบราว์เซอร์ หรือใช้วิธีอัปโหลดรูปภาพ');
       setScanning(false);
     }
   };
@@ -73,16 +115,28 @@ export default function StaffScannerPage() {
     isVerifyingRef.current = false;
   };
 
+  // สลับกล้อง
+  const handleSwitchCamera = async () => {
+    if (cameras.length <= 1) return;
+    const currentIndex = cameras.findIndex((c) => c.id === selectedCameraId);
+    const nextIndex = (currentIndex + 1) % cameras.length;
+    const nextCamId = cameras[nextIndex].id;
+    setSelectedCameraId(nextCamId);
+    if (scanning) {
+      await startCamera(nextCamId);
+    }
+  };
+
   // ตรวจสอบ Token เมื่อสแกนติด
   const handleScanSuccess = async (scannedToken: string) => {
-    setCurrentToken(scannedToken);
+    setCurrentToken(scannedToken.trim());
     setActionLoading(true);
 
     try {
       const res = await fetch('/api/staff/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: scannedToken, action: 'VERIFY' }),
+        body: JSON.stringify({ token: scannedToken.trim(), action: 'VERIFY' }),
       });
 
       const data = await res.json();
@@ -107,6 +161,24 @@ export default function StaffScannerPage() {
       setTimeout(() => {
         isVerifyingRef.current = false;
       }, 2000);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // สแกนจากไฟล์รูปภาพ
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setActionLoading(true);
+    setFeedback(null);
+    try {
+      const html5QrCode = new Html5Qrcode('qr-reader-container');
+      const decoded = await html5QrCode.scanFile(file, true);
+      handleScanSuccess(decoded);
+    } catch (err) {
+      setFeedback({ type: 'error', message: 'ไม่พบ QR Code ในรูปภาพที่เลือก กรุณาลองใหม่' });
     } finally {
       setActionLoading(false);
     }
@@ -172,10 +244,10 @@ export default function StaffScannerPage() {
               <Camera className="w-16 h-16 text-slate-600 mb-4" />
               <p className="text-sm font-semibold text-slate-300 mb-1">กล้องยังไม่ได้เปิดใช้งาน</p>
               <p className="text-xs text-slate-500 mb-6 max-w-xs">
-                กดปุ่มด้านล่างเพื่อเปิดกล้องหลังสำหรับสแกน QR Code
+                กดปุ่มด้านล่างเพื่อเปิดกล้องสำหรับสแกน QR Code
               </p>
               <button
-                onClick={startCamera}
+                onClick={() => startCamera()}
                 className="py-3 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center gap-2"
               >
                 <Camera className="w-4 h-4" />
@@ -185,14 +257,71 @@ export default function StaffScannerPage() {
           )}
 
           {scanning && (
-            <button
-              onClick={stopCamera}
-              className="absolute bottom-4 right-4 z-20 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-700 text-xs font-semibold text-white hover:bg-slate-800"
-            >
-              ปิดกล้อง
-            </button>
+            <div className="absolute bottom-4 right-4 z-20 flex gap-2">
+              {cameras.length > 1 && (
+                <button
+                  onClick={handleSwitchCamera}
+                  className="p-2.5 rounded-full bg-slate-900/90 border border-slate-700 text-amber-400 hover:text-white backdrop-blur-md"
+                  title="สลับกล้อง"
+                >
+                  <SwitchCamera className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={stopCamera}
+                className="px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700 text-xs font-semibold text-white hover:bg-slate-800 backdrop-blur-md"
+              >
+                ปิดกล้อง
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Alternative options: Upload Image or Manual Input */}
+        <div className="flex items-center justify-center gap-3 mt-5 max-w-sm mx-auto">
+          <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 cursor-pointer border border-slate-700">
+            <Upload className="w-3.5 h-3.5 text-indigo-400" />
+            <span>สแกนจากรูปภาพ</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+          </label>
+
+          <button
+            onClick={() => setShowManualInput(!showManualInput)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700"
+          >
+            <Keyboard className="w-3.5 h-3.5 text-amber-400" />
+            <span>กรอกรหัสด้วยมือ</span>
+          </button>
+        </div>
+
+        {/* Manual Input Dropdown */}
+        {showManualInput && (
+          <div className="mt-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl max-w-sm mx-auto animate-fade-in text-left">
+            <label className="block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase">
+              วาง Token หรือกรอกรหัส
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualToken}
+                onChange={(e) => setManualToken(e.target.value)}
+                placeholder="วางรหัส Token ที่นี่..."
+                className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white"
+              />
+              <button
+                onClick={() => handleScanSuccess(manualToken)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl"
+              >
+                ตรวจ
+              </button>
+            </div>
+          </div>
+        )}
 
         {cameraError && (
           <div className="mt-4 p-3 rounded-2xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs max-w-sm mx-auto flex items-center gap-2">

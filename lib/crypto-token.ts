@@ -10,7 +10,7 @@ export interface QRPayload {
 }
 
 export function generateDynamicQRToken(userId: string, couponId: string): { token: string; expiresAt: number } {
-  const expiresAt = Math.floor(Date.now() / 1000) + 45; // 45 วินาที
+  const expiresAt = Math.floor(Date.now() / 1000) + 60; // 60 วินาที
   const nonce = crypto.randomBytes(8).toString('hex');
   const payload: QRPayload = { uid: userId, cid: couponId, exp: expiresAt, nonce };
   
