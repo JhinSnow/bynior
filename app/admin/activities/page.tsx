@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
-import { Gift, Plus, Trash2, Utensils, Users, Sparkles, RefreshCw, Trophy, AlertCircle } from 'lucide-react';
+import { Gift, Plus, Trash2, Utensils, Users, Sparkles, RefreshCw, Trophy, AlertCircle, Award, Star, Clapperboard } from 'lucide-react';
 
 export default function ActivitiesPage() {
   const [activeSubTab, setActiveSubTab] = useState<'lucky-draw' | 'coupons'>('lucky-draw');
 
   // Lucky draw states
-  const [prizeName, setPrizeName] = useState('รางวัลพิเศษจากสโมสรนักศึกษา');
+  const [prizeName, setPrizeName] = useState('รางวัลพิเศษ Byenior Gala Award');
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentDisplayWinner, setCurrentDisplayWinner] = useState<string>('???');
+  const [currentDisplayWinner, setCurrentDisplayWinner] = useState<string>('--- WAITING TO DRAW ---');
   const [wonUser, setWonUser] = useState<any>(null);
   const [luckyData, setLuckyData] = useState<any>(null);
   const [luckyError, setLuckyError] = useState('');
@@ -64,7 +64,6 @@ export default function ActivitiesPage() {
     setIsDrawing(true);
     setWonUser(null);
 
-    // Animation หมุนสุ่มชื่อรัวๆ 2.5 วินาที
     const eligibleList = luckyData.eligibleAttendees;
     let counter = 0;
     const interval = setInterval(() => {
@@ -87,16 +86,17 @@ export default function ActivitiesPage() {
 
         if (!res.ok) {
           setLuckyError(data.error || 'เกิดข้อผิดพลาดในการสุ่ม');
-          setCurrentDisplayWinner('???');
+          setCurrentDisplayWinner('--- WAITING TO DRAW ---');
         } else {
           setCurrentDisplayWinner(`${data.winner.studentId} - ${data.winner.fullName}`);
           setWonUser(data.winner);
 
-          // จุดพลุ Confetti ฉลองชัยชนะ
+          // พลุสีทองและแดงฉลองรางวัล
           confetti({
-            particleCount: 120,
-            spread: 80,
+            particleCount: 140,
+            spread: 90,
             origin: { y: 0.6 },
+            colors: ['#d4af37', '#f59e0b', '#dc2626', '#ffffff'],
           });
 
           fetchLuckyData();
@@ -138,31 +138,31 @@ export default function ActivitiesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 select-none">
       {/* Sub tabs */}
-      <div className="flex gap-2 border-b border-slate-800 pb-3">
+      <div className="flex gap-2 border-b border-amber-500/20 pb-3">
         <button
           onClick={() => setActiveSubTab('lucky-draw')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
             activeSubTab === 'lucky-draw'
-              ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
-              : 'bg-slate-900 text-slate-400 hover:text-white'
+              ? 'bg-gradient-to-r from-red-700 via-amber-600 to-amber-400 text-black shadow-lg shadow-amber-500/20'
+              : 'bg-neutral-900/80 text-neutral-400 hover:text-white border border-neutral-800'
           }`}
         >
-          <Gift className="w-4 h-4" />
-          ระบบสุ่มรางวัล (Lucky Draw)
+          <Trophy className="w-4 h-4" />
+          <span>ระบบสุ่มรางวัล (Lucky Draw)</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('coupons')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
             activeSubTab === 'coupons'
-              ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20'
-              : 'bg-slate-900 text-slate-400 hover:text-white'
+              ? 'bg-gradient-to-r from-red-700 via-amber-600 to-amber-400 text-black shadow-lg shadow-amber-500/20'
+              : 'bg-neutral-900/80 text-neutral-400 hover:text-white border border-neutral-800'
           }`}
         >
           <Utensils className="w-4 h-4" />
-          จัดการคูปองอาหาร (CRUD)
+          <span>จัดการคูปองอาหาร (CRUD)</span>
         </button>
       </div>
 
@@ -170,62 +170,73 @@ export default function ActivitiesPage() {
         <div className="space-y-6">
           {/* Stats Bar */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-              <span className="text-[11px] text-slate-400 block">เช็คชื่อเข้างานแล้ว</span>
-              <span className="text-xl font-black text-emerald-400">
+            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">
+                เช็คชื่อเข้างานแล้ว
+              </span>
+              <span className="text-2xl font-black text-amber-300">
                 {luckyData?.stats?.totalCheckedIn || 0}
               </span>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-              <span className="text-[11px] text-slate-400 block">ผู้มีสิทธิ์สุ่ม</span>
-              <span className="text-xl font-black text-amber-400">
+            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">
+                ผู้มีสิทธิ์สุ่ม
+              </span>
+              <span className="text-2xl font-black text-amber-400">
                 {luckyData?.stats?.eligibleCount || 0}
               </span>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 text-center">
-              <span className="text-[11px] text-slate-400 block">ได้รางวัลไปแล้ว</span>
-              <span className="text-xl font-black text-indigo-400">
+            <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-4 text-center">
+              <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">
+                ได้รางวัลไปแล้ว
+              </span>
+              <span className="text-2xl font-black text-red-400">
                 {luckyData?.stats?.winnersCount || 0}
               </span>
             </div>
           </div>
 
           {/* Interactive Draw Machine */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden shadow-2xl">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <div className="bg-neutral-950 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden shadow-2xl">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-red-800 to-amber-600 border border-amber-400 flex items-center justify-center text-amber-200 shadow-xl">
               <Trophy className="w-8 h-8" />
             </div>
 
-            <h3 className="text-2xl font-black text-white mb-2">วงล้อสุ่มผู้โชคดี Byenior</h3>
-            <p className="text-xs text-slate-400 mb-6">
-              ระบบกรองเฉพาะผู้ที่เช็คชื่อเข้างานแล้วและยังไม่เคยได้รับรางวัล
+            <h3 className="text-2xl font-black text-white mb-1 uppercase tracking-wider">
+              Hollywood Gala Award Lucky Draw
+            </h3>
+            <p className="text-xs text-neutral-400 mb-6">
+              ระบบสุ่มผู้โชคดีเฉพาะผู้ที่ผ่านการเช็คชื่อเข้างานและยังไม่เคยได้รับรางวัล
             </p>
 
-            <div className="max-w-md mx-auto mb-6">
-              <label className="block text-xs font-semibold text-slate-400 mb-2 text-left uppercase">
-                ชื่อของรางวัล
+            <div className="max-w-md mx-auto mb-6 text-left">
+              <label className="block text-xs font-bold text-amber-300 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-amber-400" />
+                <span>ชื่อของรางวัล</span>
               </label>
               <input
                 type="text"
                 value={prizeName}
                 onChange={(e) => setPrizeName(e.target.value)}
-                placeholder="ระบุชื่อรางวัล เช่น หูฟังบลูทูธ, ตุ๊กตามาสคอต"
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-2xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                placeholder="ระบุชื่อรางวัล เช่น รางวัลเกียรติยศ Byenior Gala Award"
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 focus:border-amber-400 rounded-2xl text-white text-sm"
               />
             </div>
 
             {/* Display Screen */}
-            <div className="max-w-lg mx-auto bg-slate-950 border-2 border-amber-500/50 rounded-3xl p-6 mb-6 shadow-inner relative overflow-hidden">
-              <div className="text-[11px] uppercase tracking-widest text-slate-500 font-mono mb-2">
-                WINNER ANNOUNCEMENT
+            <div className="max-w-lg mx-auto bg-black border-2 border-amber-500/60 rounded-3xl p-6 mb-6 shadow-2xl relative overflow-hidden">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-amber-400/80 font-mono mb-2 font-bold flex items-center justify-center gap-1.5">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span>WINNER ANNOUNCEMENT</span>
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               </div>
-              <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono tracking-wider min-h-[40px] flex items-center justify-center">
+              <div className="text-xl sm:text-2xl font-black text-white font-mono tracking-wider min-h-[44px] flex items-center justify-center">
                 {currentDisplayWinner}
               </div>
             </div>
 
             {luckyError && (
-              <div className="max-w-md mx-auto mb-4 p-3 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
+              <div className="max-w-md mx-auto mb-4 p-3 rounded-xl bg-red-950/80 border border-red-500/60 text-red-200 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
                 <span>{luckyError}</span>
               </div>
@@ -234,7 +245,7 @@ export default function ActivitiesPage() {
             <button
               onClick={handleStartDraw}
               disabled={isDrawing || !luckyData?.stats?.eligibleCount}
-              className="py-4 px-8 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-black font-black text-base shadow-xl shadow-amber-500/30 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50"
+              className="py-4 px-8 rounded-2xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 hover:from-red-600 hover:to-amber-400 text-black font-black text-base uppercase tracking-wider shadow-2xl shadow-red-900/40 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50"
             >
               <Sparkles className="w-5 h-5" />
               <span>{isDrawing ? 'กำลังสุ่มรายชื่อ...' : 'เริ่มหมุนสุ่มรางวัล'}</span>
@@ -242,28 +253,28 @@ export default function ActivitiesPage() {
           </div>
 
           {/* Winners History */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-            <h4 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6">
+            <h4 className="text-base font-black text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
               <Trophy className="w-5 h-5 text-amber-400" />
               <span>ประวัติผู้ได้รับรางวัล ({luckyData?.winners?.length || 0})</span>
             </h4>
 
             <div className="space-y-2">
               {luckyData?.winners?.length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-4">ยังไม่มีการสุ่มรางวัล</p>
+                <p className="text-xs text-neutral-500 text-center py-4 uppercase tracking-wider">ยังไม่มีประวัติการสุ่มรางวัล</p>
               ) : (
                 luckyData?.winners?.map((win: any) => (
                   <div
                     key={win.id}
-                    className="p-3 bg-slate-950 border border-slate-800/80 rounded-2xl flex items-center justify-between"
+                    className="p-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl flex items-center justify-between"
                   >
                     <div>
-                      <p className="text-sm font-bold text-white">{win.user.fullName}</p>
-                      <p className="text-xs font-mono text-slate-400">
+                      <p className="text-sm font-black text-white">{win.user.fullName}</p>
+                      <p className="text-xs font-mono text-amber-300/80">
                         {win.user.studentId} • {win.prizeName}
                       </p>
                     </div>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] font-mono text-neutral-500">
                       {new Date(win.wonAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
@@ -275,8 +286,8 @@ export default function ActivitiesPage() {
       ) : (
         /* Coupons CRUD Tab */
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-            <h3 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+          <div className="bg-neutral-950 border border-amber-500/30 rounded-3xl p-6">
+            <h3 className="text-base font-black text-white mb-4 flex items-center gap-2 uppercase tracking-wider">
               <Plus className="w-5 h-5 text-amber-400" />
               <span>เพิ่มร้านค้าและเมนูอาหารใหม่</span>
             </h3>
@@ -288,7 +299,7 @@ export default function ActivitiesPage() {
                 placeholder="ชื่อเมนู (เช่น ข้าวหมูกรอบ)"
                 value={newCoupon.name}
                 onChange={(e) => setNewCoupon({ ...newCoupon, name: e.target.value })}
-                className="px-4 py-3 bg-slate-950 border border-slate-700 rounded-2xl text-xs text-white"
+                className="px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-2xl text-xs text-white"
               />
               <input
                 type="text"
@@ -296,20 +307,20 @@ export default function ActivitiesPage() {
                 placeholder="ชื่อร้านค้า (เช่น ร้านป้าแดง)"
                 value={newCoupon.storeName}
                 onChange={(e) => setNewCoupon({ ...newCoupon, storeName: e.target.value })}
-                className="px-4 py-3 bg-slate-950 border border-slate-700 rounded-2xl text-xs text-white"
+                className="px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-2xl text-xs text-white"
               />
               <input
                 type="text"
                 placeholder="คำอธิบาย (ถ้ามี)"
                 value={newCoupon.description}
                 onChange={(e) => setNewCoupon({ ...newCoupon, description: e.target.value })}
-                className="px-4 py-3 bg-slate-950 border border-slate-700 rounded-2xl text-xs text-white"
+                className="px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-2xl text-xs text-white"
               />
               <div className="sm:col-span-3 text-right">
                 <button
                   type="submit"
                   disabled={creatingCoupon}
-                  className="py-2.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs"
+                  className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 text-black font-black text-xs uppercase tracking-wider shadow-md"
                 >
                   {creatingCoupon ? 'กำลังบันทึก...' : 'บันทึกคูปองใหม่'}
                 </button>
@@ -317,25 +328,25 @@ export default function ActivitiesPage() {
             </form>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6">
-            <h3 className="text-base font-bold text-white mb-4">
-              รายการคูปองทั้งหมด ({coupons.length})
+          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6">
+            <h3 className="text-base font-black text-white mb-4 uppercase tracking-wider">
+              รายการคูปองอาหารทั้งหมด ({coupons.length})
             </h3>
             <div className="space-y-3">
               {coupons.map((c) => (
                 <div
                   key={c.id}
-                  className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between"
+                  className="p-4 bg-neutral-900 border border-neutral-800 rounded-2xl flex items-center justify-between"
                 >
                   <div>
-                    <h4 className="text-sm font-bold text-white">{c.name}</h4>
-                    <p className="text-xs text-slate-400">
+                    <h4 className="text-sm font-black text-white">{c.name}</h4>
+                    <p className="text-xs text-neutral-400">
                       ร้าน: {c.storeName} • มีผู้ใช้สิทธิ์แล้ว {c._count?.redemptions || 0} คน
                     </p>
                   </div>
                   <button
                     onClick={() => handleDeleteCoupon(c.id)}
-                    className="p-2 text-slate-400 hover:text-red-400 rounded-xl hover:bg-red-950/40 transition-colors"
+                    className="p-2 text-neutral-400 hover:text-red-400 rounded-xl hover:bg-neutral-800 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

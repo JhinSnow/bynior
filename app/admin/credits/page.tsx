@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Play, RotateCcw, Volume2, ArrowLeft } from 'lucide-react';
+import { Maximize2, Minimize2, Play, RotateCcw, Volume2, ArrowLeft, Star, Film } from 'lucide-react';
 import Link from 'next/link';
 
 declare global {
@@ -278,7 +278,7 @@ export default function EndCreditTheaterPage() {
           <button
             onClick={handleStartPlay}
             disabled={loading}
-            className="px-10 py-5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:scale-105 active:scale-95 text-black font-black text-xl tracking-wider shadow-2xl shadow-amber-500/30 transition-all flex items-center gap-3"
+            className="px-10 py-5 rounded-full bg-gradient-to-r from-red-800 via-amber-600 to-amber-500 hover:from-red-700 hover:to-amber-400 hover:scale-105 active:scale-95 text-black font-black text-xl tracking-wider uppercase shadow-2xl shadow-red-950/60 transition-all flex items-center gap-3 border border-amber-400/40"
           >
             <Play className="w-6 h-6 fill-black" />
             <span>เริ่มฉาย END CREDIT</span>
@@ -368,14 +368,17 @@ export default function EndCreditTheaterPage() {
 
           {/* Final Ending Message */}
           <div className="py-72 text-center">
-            <h3 className="text-6xl font-serif text-amber-200 mb-6 tracking-wide">
+            <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-gradient-to-tr from-red-800 to-amber-600 border-2 border-amber-400 flex items-center justify-center text-amber-200 shadow-2xl">
+              <Star className="w-10 h-10 fill-amber-300 text-amber-300" />
+            </div>
+            <h3 className="text-6xl font-serif text-amber-300 mb-6 tracking-wider uppercase font-black">
               THANK YOU FOR BEING A PART OF US
             </h3>
-            <p className="text-3xl text-slate-400 tracking-widest font-light">
+            <p className="text-3xl text-neutral-300 tracking-widest font-light">
               ขอให้ทุกก้าวเดินต่อไปในอนาคตเต็มไปด้วยความสุขและความสำเร็จ
             </p>
-            <div className="mt-16 text-2xl text-slate-600 font-mono tracking-widest">
-              BYENIOR SAMOSCI 2026
+            <div className="mt-16 text-2xl text-amber-400/80 font-mono tracking-widest uppercase font-bold">
+              FACULTY OF SCIENCE • BYENIOR 2026
             </div>
           </div>
         </div>

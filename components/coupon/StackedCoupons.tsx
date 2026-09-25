@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Utensils, QrCode, CheckCircle2, ChevronDown, Layers } from 'lucide-react';
+import { QrCode, CheckCircle2, ChevronDown, Layers, Ticket, Star, Sparkles } from 'lucide-react';
 import { DynamicQRModal } from './DynamicQRModal';
 
 export interface CouponItem {
@@ -19,11 +19,32 @@ interface StackedCouponsProps {
   onRefresh: () => void;
 }
 
-const CARD_COLORS = [
-  'from-amber-500 via-orange-600 to-rose-600',
-  'from-indigo-600 via-purple-600 to-pink-600',
-  'from-emerald-500 via-teal-600 to-cyan-600',
-  'from-blue-600 via-indigo-700 to-violet-800',
+// Hollywood Gala Cards Color Schemes (Crimson, Champagne Gold, Velvet Dark, Deep Wine)
+const HOLLYWOOD_CARD_STYLES = [
+  {
+    gradient: 'from-red-950 via-red-900 to-amber-950',
+    border: 'border-amber-500/50',
+    badge: 'bg-amber-400 text-black',
+    accent: 'text-amber-300',
+  },
+  {
+    gradient: 'from-neutral-900 via-neutral-800 to-stone-900',
+    border: 'border-amber-400/60',
+    badge: 'bg-red-700 text-white',
+    accent: 'text-amber-200',
+  },
+  {
+    gradient: 'from-amber-950 via-red-950 to-neutral-950',
+    border: 'border-amber-500/40',
+    badge: 'bg-amber-500 text-black',
+    accent: 'text-amber-400',
+  },
+  {
+    gradient: 'from-stone-900 via-red-950 to-neutral-900',
+    border: 'border-neutral-600',
+    badge: 'bg-neutral-800 text-amber-300',
+    accent: 'text-amber-100',
+  },
 ];
 
 export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
@@ -36,7 +57,7 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
       return;
     }
 
-    if (coupon.isRedeemed) return; // ไม่สามารถกดเปิดได้ถ้าใช้ไปแล้ว
+    if (coupon.isRedeemed) return;
     setSelectedCoupon(coupon);
   };
 
@@ -46,18 +67,18 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
       <div className="flex items-center justify-between mb-4 px-1">
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-2 text-xs font-semibold text-slate-300 bg-slate-800/80 px-3.5 py-1.5 rounded-full border border-slate-700/60 shadow-sm active:scale-95 transition-all"
+          className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300 bg-neutral-900/90 px-4 py-2 rounded-full border border-amber-500/30 shadow-md active:scale-95 transition-all"
         >
           <Layers className="w-4 h-4 text-amber-400" />
-          <span>{isExpanded ? 'พับการ์ดเก็บ (Stack)' : 'กางดูคูปองทั้งหมด (Unfold)'}</span>
+          <span>{isExpanded ? 'พับเก็บการ์ด (Stack)' : 'กางดูคูปองทั้งหมด (Unfold)'}</span>
           <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform duration-300 ${
+            className={`w-3.5 h-3.5 transition-transform duration-300 text-amber-400 ${
               isExpanded ? 'rotate-180' : ''
             }`}
           />
         </button>
 
-        <span className="text-xs text-slate-400">
+        <span className="text-xs font-medium text-neutral-400">
           ใช้แล้ว {coupons.filter((c) => c.isRedeemed).length}/{coupons.length} สิทธิ์
         </span>
       </div>
@@ -74,10 +95,9 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
       >
         <AnimatePresence>
           {coupons.map((coupon, index) => {
-            const colorGradient = CARD_COLORS[index % CARD_COLORS.length];
-            // Stacked offset
+            const style = HOLLYWOOD_CARD_STYLES[index % HOLLYWOOD_CARD_STYLES.length];
             const stackY = index * 42;
-            const stackScale = 1 - index * 0.04;
+            const stackScale = 1 - index * 0.035;
             const stackZIndex = coupons.length - index;
 
             return (
@@ -100,10 +120,10 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
                 }
                 transition={{ type: 'spring', stiffness: 260, damping: 22 }}
                 onClick={() => handleCardClick(coupon)}
-                className={`w-full rounded-3xl p-5 shadow-xl border cursor-pointer select-none relative overflow-hidden transition-shadow ${
+                className={`w-full rounded-3xl p-5 shadow-2xl border cursor-pointer select-none relative overflow-hidden transition-all ${
                   coupon.isRedeemed
-                    ? 'bg-slate-900 border-slate-800 text-slate-500 grayscale opacity-75'
-                    : `bg-gradient-to-r ${colorGradient} text-white border-white/20 active:scale-[0.99]`
+                    ? 'bg-neutral-950 border-neutral-800 text-neutral-600 grayscale opacity-60'
+                    : `bg-gradient-to-r ${style.gradient} ${style.border} text-white active:scale-[0.99]`
                 }`}
                 style={{
                   position: 'absolute',
@@ -113,22 +133,29 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
                   height: '140px',
                 }}
               >
-                {/* Decorative watermarks */}
-                <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
+                {/* Hollywood Golden Accent Line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-400/80 to-transparent pointer-events-none" />
 
                 <div className="flex justify-between items-start h-full">
                   <div className="flex flex-col justify-between h-full pr-4">
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[11px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-sm">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={`text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full ${coupon.isRedeemed ? 'bg-neutral-800 text-neutral-500' : style.badge}`}>
                           {coupon.storeName}
                         </span>
+                        {!coupon.isRedeemed && (
+                          <span className="text-[10px] text-amber-300/80 flex items-center gap-0.5 font-semibold uppercase tracking-wider">
+                            <Star className="w-2.5 h-2.5 fill-amber-300" />
+                            VIP Pass
+                          </span>
+                        )}
                       </div>
-                      <h4 className="text-lg font-black tracking-tight leading-tight line-clamp-1">
+
+                      <h4 className="text-lg font-black tracking-tight leading-tight line-clamp-1 text-white">
                         {coupon.name}
                       </h4>
                       {coupon.description && (
-                        <p className="text-xs text-white/80 line-clamp-1 mt-1">
+                        <p className="text-xs text-neutral-300 line-clamp-1 mt-1">
                           {coupon.description}
                         </p>
                       )}
@@ -136,12 +163,13 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
 
                     <div className="text-[11px] font-medium flex items-center gap-1.5">
                       {coupon.isRedeemed ? (
-                        <span className="text-red-400 flex items-center gap-1 bg-red-950/80 px-2 py-0.5 rounded-full border border-red-500/30">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span className="text-neutral-400 flex items-center gap-1 bg-neutral-900 px-2.5 py-0.5 rounded-full border border-neutral-800">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />
                           ใช้สิทธิ์รับอาหารแล้ว
                         </span>
                       ) : (
-                        <span className="text-white/90 bg-black/20 px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                        <span className="text-amber-200 bg-black/40 px-2.5 py-0.5 rounded-full border border-amber-500/20 backdrop-blur-sm flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-amber-400" />
                           แตะเพื่อเปิด QR Code รับอาหาร
                         </span>
                       )}
@@ -151,12 +179,12 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
                   {/* QR icon / Status */}
                   <div className="flex flex-col items-center justify-center shrink-0 self-center">
                     {coupon.isRedeemed ? (
-                      <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-600">
                         <CheckCircle2 className="w-6 h-6" />
                       </div>
                     ) : (
-                      <div className="w-12 h-12 rounded-2xl bg-white/20 border border-white/30 backdrop-blur-md flex items-center justify-center text-white shadow-lg">
-                        <QrCode className="w-6 h-6" />
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-black flex items-center justify-center shadow-lg shadow-amber-500/30">
+                        <QrCode className="w-6 h-6 stroke-[2.5]" />
                       </div>
                     )}
                   </div>
