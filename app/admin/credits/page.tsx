@@ -340,18 +340,24 @@ export default function EndCreditTheaterPage() {
             </div>
           </div>
 
-          {/* Part 2: Staff & Organizers (เรียงตามลำดับ 5 กลุ่ม) */}
+          {/* Part 2: Staff & Organizers (ผู้ร่วมจัด, ชุมนุม, สโมสร) */}
           {staffGroups.map((group) => (
-            <div key={group.category} className="mb-52">
+            <div key={group.category} className="mb-56">
               <h2 className="text-5xl font-black tracking-widest text-amber-400 mb-14 uppercase">
                 {group.label}
               </h2>
-              <div className="space-y-7 text-3xl text-slate-200">
+              <div
+                className={`${
+                  group.members.length > 25
+                    ? 'grid grid-cols-2 gap-y-7 gap-x-12 max-w-4xl mx-auto'
+                    : 'space-y-7'
+                } text-3xl text-slate-100 font-light`}
+              >
                 {group.members.length === 0 ? (
-                  <p className="text-slate-500 text-2xl italic">- ไม่พบรายชื่อ -</p>
+                  <p className="col-span-2 text-slate-500 text-2xl italic">- ไม่พบรายชื่อ -</p>
                 ) : (
                   group.members.map((m) => (
-                    <p key={m.id} className="tracking-widest font-normal text-white">
+                    <p key={m.id} className="tracking-wide font-normal text-white py-1">
                       {m.fullName}
                     </p>
                   ))

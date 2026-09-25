@@ -15,7 +15,7 @@ export async function GET() {
       },
     });
 
-    // 2. ดึงรายชื่อฝ่ายดำเนินงานและกิจกรรมทั้ง 5 กลุ่ม
+    // 2. ดึงรายชื่อฝ่ายดำเนินงานและกิจกรรม
     const staffRecords = await prisma.organizerCredit.findMany({
       orderBy: [
         { category: 'asc' },
@@ -23,20 +23,39 @@ export async function GET() {
       ],
     });
 
-    // จัดกลุ่มตามลำดับแท็บที่กำหนด
-    const groupDefinitions: { category: OrganizerCategory; label: string }[] = [
-      { category: OrganizerCategory.PERFORMANCE_1, label: 'ผู้ร่วมจัด 1' },
-      { category: OrganizerCategory.PERFORMANCE_2, label: 'ผู้ร่วมจัด 2' },
-      { category: OrganizerCategory.PERFORMANCE_3, label: 'ผู้ร่วมจัด 3' },
-      { category: OrganizerCategory.CLUB, label: 'ชุมนุม' },
-      { category: OrganizerCategory.SAMO, label: 'สโมสร' },
-    ];
+    // รวบกลุ่มผู้ร่วมจัด (PERFORMANCE_1, 2, 3) เข้าด้วยกัน
+    const coOrganizers = staffRecords.filter(
+      (s) =>
+        s.category === OrganizerCategory.PERFORMANCE_1 ||
+        s.category === OrganizerCategory.PERFORMANCE_2 ||
+        s.category === OrganizerCategory.PERFORMANCE_3
+    );
 
-    const staffGroups = groupDefinitions.map((def) => ({
-      category: def.category,
-      label: def.label,
-      members: staffRecords.filter((s) => s.category === def.category),
-    }));
+    const clubMembers = staffRecords.filter(
+      (s) => s.category === OrganizerCategory.CLUB
+    );
+
+    const samoMembers = staffRecords.filter(
+      (s) => s.category === OrganizerCategory.SAMO
+    );
+
+    const staffGroups = [
+      {
+        category: 'CO_ORGANIZERS',
+        label: 'ผู้ร่วมจัด',
+        members: coOrganizers,
+      },
+      {
+        category: 'CLUB',
+        label: 'ชุมนุม',
+        members: clubMembers,
+      },
+      {
+        category: 'SAMO',
+        label: 'สโมสร',
+        members: samoMembers,
+      },
+    ];
 
     return NextResponse.json({
       participants,
