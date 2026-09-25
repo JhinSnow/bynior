@@ -41,7 +41,7 @@ export default function RootLayout({
       className={`dark h-full ${notoSansThai.variable} ${fcLuxurious.variable}`}
     >
       <body
-        className={`${notoSansThai.className} min-h-full flex flex-col bg-slate-950 text-white selection:bg-amber-500 selection:text-black antialiased`}
+        className={`${notoSansThai.className} min-h-full flex flex-col bg-black text-white selection:bg-amber-500 selection:text-black antialiased`}
       >
         {children}
       </body>

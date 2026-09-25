@@ -131,12 +131,67 @@ export default function EndCreditTheaterPage() {
     if (total > 0) setTotalDuration(total);
   };
 
-  // Fullscreen toggle
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false));
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFull = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isFull);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Fullscreen toggle with cross-browser and mobile Safari support
+  const toggleFullscreen = async () => {
+    try {
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+
+      if (!isCurrentlyFullscreen) {
+        const elem = containerRef.current || document.documentElement;
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        } else if ((elem as any).webkitRequestFullscreen) {
+          await (elem as any).webkitRequestFullscreen();
+        } else if ((elem as any).mozRequestFullScreen) {
+          await (elem as any).mozRequestFullScreen();
+        } else if ((elem as any).msRequestFullscreen) {
+          await (elem as any).msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle failed:', err);
     }
   };
 
@@ -218,7 +273,10 @@ export default function EndCreditTheaterPage() {
   }, [isPlaying]);
 
   return (
-    <div className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none relative font-luxurious">
+    <div
+      ref={containerRef}
+      className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none relative font-luxurious"
+    >
       {/* Hidden YouTube Audio Players */}
       <div className="hidden pointer-events-none">
         <div id="yt-player-1" />
@@ -371,8 +429,11 @@ export default function EndCreditTheaterPage() {
             <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-2xl">
               <Star className="w-10 h-10 fill-amber-300 text-amber-300" />
             </div>
-            <h3 className="text-6xl font-serif text-amber-300 mb-6 tracking-wider uppercase font-black">
-              THANK YOU FOR BEING A PART OF US
+            <h3 className="text-6xl sm:text-7xl font-serif text-amber-300 mb-6 tracking-wider uppercase font-black space-y-2">
+              <span className="block">THANK YOU</span>
+              <span className="block text-4xl sm:text-5xl text-amber-400/90 font-bold tracking-widest mt-3">
+                FOR BEING A PART OF US
+              </span>
             </h3>
             <p className="text-3xl text-neutral-300 tracking-widest font-light">
               ขอให้ทุกก้าวเดินต่อไปในอนาคตเต็มไปด้วยความสุขและความสำเร็จ
