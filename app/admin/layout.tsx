@@ -60,16 +60,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const tabs = [
     {
-      name: 'แท็บ 1: สแกนคูปอง',
+      name: 'สแกนคูปองอาหาร',
       href: '/admin/scanner',
       icon: ScanLine,
-      badge: 'Staff',
     },
     {
-      name: 'แท็บ 2: จัดการกิจกรรม',
+      name: 'จัดการกิจกรรม & สุ่มรางวัล',
       href: '/admin/activities',
       icon: Award,
-      badge: 'Admin',
     },
   ];
 

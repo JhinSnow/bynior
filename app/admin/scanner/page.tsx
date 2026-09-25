@@ -158,7 +158,7 @@ export default function StaffScannerPage() {
   return (
     <div className="space-y-6">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl text-center">
-        <h2 className="text-xl font-black text-white mb-1">แท็บ 1: เครื่องสแกนคูปองอาหาร</h2>
+        <h2 className="text-xl font-black text-white mb-1">เครื่องสแกนคูปองอาหาร</h2>
         <p className="text-xs text-slate-400 mb-6">
           สแกน Dynamic QR Code บนหน้าจอมือถือของผู้เข้าร่วมงานเพื่อตัดสิทธิ์
         </p>

@@ -2,13 +2,12 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, ShieldAlert, ArrowLeft, ArrowRight, UserCog, ScanLine } from 'lucide-react';
+import { Lock, ShieldAlert, ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'STAFF' | 'ADMIN'>('STAFF');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,7 +20,7 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/auth/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, role }),
+        body: JSON.stringify({ password, role: 'ADMIN' }),
       });
 
       const data = await res.json();
@@ -31,12 +30,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // ไปยังหน้าที่ตรงกับบทบาท
-      if (role === 'STAFF') {
-        router.push('/admin/scanner');
-      } else {
-        router.push('/admin/activities');
-      }
+      // ไปยังหน้าระบบ Admin
+      router.push('/admin/scanner');
     } catch {
       setError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     } finally {
@@ -63,44 +58,16 @@ export default function AdminLoginPage() {
           </div>
 
           <h1 className="text-2xl font-bold text-center text-white mb-1">
-            เข้าสู่ระบบเจ้าหน้าที่
+            เข้าสู่ระบบผู้ดูแลระบบ (Admin)
           </h1>
           <p className="text-xs text-center text-slate-400 mb-6">
-            สแกนคูปองอาหารและจัดการกิจกรรม Byenior
+            สแกนคูปองอาหาร จัดการกิจกรรม สุ่มรางวัล และฉาย End Credit
           </p>
-
-          {/* Role Selector Tabs */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl mb-6 border border-slate-800">
-            <button
-              type="button"
-              onClick={() => setRole('STAFF')}
-              className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                role === 'STAFF'
-                  ? 'bg-amber-500 text-black shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <ScanLine className="w-4 h-4" />
-              เจ้าหน้าที่สแกน
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('ADMIN')}
-              className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                role === 'ADMIN'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <UserCog className="w-4 h-4" />
-              สโมสรฯ (Admin)
-            </button>
-          </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                รหัสผ่านสำหรับเจ้าหน้าที่
+                รหัสผ่านผู้ดูแลระบบ
               </label>
               <input
                 type="password"
@@ -128,7 +95,8 @@ export default function AdminLoginPage() {
                 <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>เข้าสู่ระบบ {role === 'STAFF' ? 'สแกนเนอร์' : 'จัดการกิจกรรม'}</span>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>เข้าสู่ระบบ Admin Portal</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
