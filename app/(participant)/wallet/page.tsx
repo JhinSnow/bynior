@@ -64,14 +64,11 @@ export default function WalletPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between max-w-md mx-auto p-4 sm:p-5 relative pb-10 select-none">
-      {/* Hollywood Red & Gold Ambience */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-72 bg-gradient-to-b from-red-950/30 via-amber-950/20 to-transparent blur-[80px] pointer-events-none" />
-
       {/* Top Header Card */}
       <div className="z-10 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-red-700 to-amber-500 text-black shadow-lg">
+            <div className="p-2 rounded-xl bg-red-700 text-white border border-red-600 shadow-md">
               <Film className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -105,14 +102,12 @@ export default function WalletPage() {
         </div>
 
         {/* User Badge Profile */}
-        <div className="p-4 rounded-3xl bg-neutral-950/90 border border-amber-500/30 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-red-900/10 rounded-full blur-xl pointer-events-none" />
-
+        <div className="p-4 rounded-3xl bg-neutral-950 border border-amber-500/30 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-black text-white line-clamp-1">{user?.fullName}</h2>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30 uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-500/10 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/30 uppercase tracking-wider">
                   <Star className="w-3 h-3 fill-amber-300" />
                   Checked-in
                 </span>

@@ -1,17 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050505;
-  --foreground: #fafafa;
-  --gold-primary: #d4af37;
-  --gold-light: #fef08a;
-  --crimson-red: #991b1b;
-  --velvet-red: #7f1d1d;
+  --background: #000000;
+  --foreground: #ffffff;
+  --gold: #d4af37;
+  --red: #b91c1c;
 }
 
 body {
-  background: #050505;
-  color: #f5f5f5;
+  background: #000000;
+  color: #ffffff;
   min-height: 100vh;
   overscroll-behavior-y: none;
   -webkit-tap-highlight-color: transparent;
@@ -23,15 +21,6 @@ body {
 .font-luxurious,
 .font-luxurious * {
   font-family: var(--font-fc-luxurious), 'FCLuxurious', serif !important;
-}
-
-/* Hollywood Gold Accent Glow */
-.gold-glow {
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
-}
-
-.red-carpet-glow {
-  box-shadow: 0 0 30px rgba(185, 28, 28, 0.3);
 }
 
 @keyframes shake {
@@ -50,5 +39,5 @@ body {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
+  animation: fadeIn 0.2s ease-out forwards;
 }

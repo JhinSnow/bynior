@@ -73,17 +73,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between select-none">
       {/* Top Navbar */}
-      <header className="bg-neutral-950/95 border-b border-amber-500/20 sticky top-0 z-30 backdrop-blur-md px-4 py-3">
+      <header className="bg-neutral-950 border-b border-amber-500/30 sticky top-0 z-30 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-tr from-red-700 via-amber-600 to-amber-400 text-black font-bold shadow-md">
+            <div className="p-2 rounded-xl bg-red-700 text-white font-bold border border-red-600 shadow-md">
               <Clapperboard className="w-5 h-5 text-white" />
             </div>
             <div>
               <h1 className="text-sm font-black text-white tracking-widest uppercase">
                 BYENIOR 2026 • ADMIN
               </h1>
-              <p className="text-[11px] text-amber-400/90 font-medium">
+              <p className="text-[11px] text-amber-400 font-medium">
                 {session?.user?.fullName || 'ผู้ดูแลระบบและฝ่ายดำเนินงาน'}
               </p>
             </div>
@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               href="/admin/credits"
               target="_blank"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-800 to-red-600 hover:from-red-700 hover:to-red-500 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-all active:scale-95 border border-red-500/30"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-all active:scale-95 border border-red-600"
             >
               <Film className="w-4 h-4" />
               <span>เปิดจอ End Credit</span>
@@ -120,8 +120,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={tab.href}
                 className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-black shadow-lg shadow-amber-500/20'
-                    : 'bg-neutral-900/80 text-neutral-400 hover:bg-neutral-900 hover:text-white border border-neutral-800'
+                    ? 'bg-amber-400 text-black border border-amber-300 font-black'
+                    : 'bg-neutral-900 text-neutral-400 hover:bg-neutral-850 hover:text-white border border-neutral-800'
                 }`}
               >
                 <Icon className="w-4 h-4" />

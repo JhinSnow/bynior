@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
-import { X, Clock, RefreshCw, AlertCircle, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { X, Clock, RefreshCw, AlertCircle, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface DynamicQRModalProps {
   couponId: string;
@@ -45,7 +45,6 @@ export function DynamicQRModal({
       const remaining = Math.max(0, data.expiresAt - nowEpoch);
       setTimeLeft(remaining > 0 ? remaining : 60);
 
-      // สร้าง Data URL QR Code คมชัด สแกนติดง่ายที่สุด
       const url = await QRCode.toDataURL(data.token, {
         width: 360,
         margin: 1,
@@ -85,11 +84,8 @@ export function DynamicQRModal({
   }, [loading, error, fetchTokenAndGenerateQR]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none">
-      <div className="relative w-full max-w-sm bg-neutral-950 border border-amber-500/40 rounded-3xl p-6 shadow-2xl text-center overflow-hidden">
-        {/* Top Gold Accent Line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-600 via-amber-400 to-red-600" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 select-none">
+      <div className="relative w-full max-w-sm bg-neutral-950 border-2 border-amber-500 rounded-3xl p-6 text-center overflow-hidden">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -100,20 +96,20 @@ export function DynamicQRModal({
 
         {/* Header */}
         <div className="mb-4 pt-2">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 mb-2 uppercase tracking-widest">
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black bg-amber-400 text-black mb-2 uppercase tracking-widest">
+            <ShieldCheck className="w-3.5 h-3.5 text-black" />
             Dynamic VIP Pass
           </span>
           <h3 className="text-xl font-black text-white line-clamp-1">{couponName}</h3>
-          <p className="text-xs text-neutral-400 mt-0.5">{storeName}</p>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">{storeName}</p>
         </div>
 
         {/* QR Display Area */}
-        <div className="w-64 h-64 mx-auto bg-white rounded-2xl p-2.5 shadow-2xl flex items-center justify-center relative overflow-hidden border-2 border-amber-400/40">
+        <div className="w-64 h-64 mx-auto bg-white rounded-2xl p-2.5 flex items-center justify-center relative overflow-hidden border-2 border-amber-500">
           {loading ? (
-            <div className="flex flex-col items-center gap-3 text-neutral-800">
+            <div className="flex flex-col items-center gap-3 text-neutral-900">
               <RefreshCw className="w-8 h-8 animate-spin text-red-700" />
-              <span className="text-xs font-semibold">กำลังสร้างรหัสลับ VIP...</span>
+              <span className="text-xs font-bold">กำลังสร้างรหัสลับ VIP...</span>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center gap-2 p-3 text-red-600">
@@ -121,7 +117,7 @@ export function DynamicQRModal({
               <span className="text-xs">{error}</span>
               <button
                 onClick={fetchTokenAndGenerateQR}
-                className="mt-2 px-3 py-1.5 bg-neutral-100 rounded-lg text-xs font-bold text-neutral-900"
+                className="mt-2 px-3 py-1.5 bg-neutral-200 rounded-lg text-xs font-bold text-black"
               >
                 ลองใหม่อีกครั้ง
               </button>
@@ -139,14 +135,14 @@ export function DynamicQRModal({
         {!error && !loading && (
           <div className="mt-4">
             <div className="flex items-center justify-center gap-1.5 text-xs text-amber-400 font-mono font-bold mb-1.5">
-              <Clock className="w-4 h-4 animate-pulse" />
+              <Clock className="w-4 h-4 animate-pulse text-amber-400" />
               <span>รหัสจะหมุนเปลี่ยนใหม่ใน {timeLeft} วินาที</span>
             </div>
 
             {/* Progress bar */}
-            <div className="w-full h-1.5 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
+            <div className="w-full h-2 bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
               <div
-                className="h-full bg-gradient-to-r from-red-600 via-amber-500 to-amber-300 transition-all duration-1000 ease-linear rounded-full"
+                className="h-full bg-amber-500 transition-all duration-1000 ease-linear rounded-full"
                 style={{ width: `${(timeLeft / 60) * 100}%` }}
               />
             </div>

@@ -40,22 +40,9 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between p-4 sm:p-6 relative select-none">
-      {/* Background Ambience */}
-      <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full bg-red-950/25 blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-md mx-auto pt-2 z-10">
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-2 text-xs text-neutral-400 hover:text-amber-300 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>กลับสู่หน้าสำหรับผู้เข้าร่วมงาน</span>
-        </Link>
-      </div>
-
       <div className="w-full max-w-md mx-auto my-auto py-8 z-10">
-        <div className="bg-neutral-950/90 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-tr from-red-800 to-amber-600 border border-amber-400 flex items-center justify-center text-amber-200 shadow-lg">
+        <div className="bg-neutral-950 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-md">
             <Lock className="w-7 h-7" />
           </div>
 
@@ -83,7 +70,7 @@ export default function AdminLoginPage() {
             </div>
 
             {error && (
-              <div className="p-3.5 rounded-xl bg-red-950/80 border border-red-500/60 text-red-200 text-xs flex items-center gap-2 animate-shake">
+              <div className="p-3.5 rounded-xl bg-red-950 border border-red-500/60 text-red-200 text-xs flex items-center gap-2 animate-shake">
                 <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
                 <span>{error}</span>
               </div>
@@ -92,7 +79,7 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 hover:from-red-600 hover:to-amber-400 text-black font-black text-sm tracking-wider uppercase shadow-xl shadow-red-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 min-h-[48px]"
+              className="w-full py-4 px-6 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-sm tracking-wider uppercase shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 min-h-[48px] border border-amber-300"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />

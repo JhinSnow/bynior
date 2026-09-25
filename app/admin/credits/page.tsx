@@ -233,21 +233,21 @@ export default function EndCreditTheaterPage() {
       >
         <Link
           href="/admin/activities"
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 hover:text-white text-xs backdrop-blur-md"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white text-xs shadow-md"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>กลับหน้า Admin</span>
         </Link>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-700 text-[11px] text-amber-400 font-mono backdrop-blur-md">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-700 text-[11px] text-amber-400 font-mono shadow-md">
             <Volume2 className="w-3.5 h-3.5 animate-pulse" />
             <span>Soundtrack #{currentSongIndex}</span>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="p-2 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 hover:text-white backdrop-blur-md"
+            className="p-2 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white shadow-md"
             title="สลับเต็มจอ (Fullscreen)"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -256,7 +256,7 @@ export default function EndCreditTheaterPage() {
           {isPlaying && (
             <button
               onClick={handleReset}
-              className="p-2 rounded-full bg-red-900/60 border border-red-700 text-red-200 hover:bg-red-900 backdrop-blur-md"
+              className="p-2 rounded-full bg-red-950 border border-red-700 text-red-200 hover:bg-red-900 shadow-md"
               title="เริ่มใหม่ (Reset)"
             >
               <RotateCcw className="w-4 h-4" />
@@ -267,18 +267,18 @@ export default function EndCreditTheaterPage() {
 
       {/* Start Playback Screen Overlay */}
       {!isPlaying && !isCompleted && (
-        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md p-6 text-center">
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/95 p-6 text-center">
           <h2 className="text-3xl sm:text-5xl font-black text-amber-400 tracking-widest mb-3">
             BYENIOR 2026 END CREDIT
           </h2>
-          <p className="text-sm text-slate-400 max-w-md mb-8">
+          <p className="text-sm text-neutral-400 max-w-md mb-8">
             พร้อมระบบฉายอัตราส่วนแนวตั้ง 16:9 Vertical (1080x1920) ซิงค์เพลงประกอบ 2 เพลงอัตโนมัติ
           </p>
 
           <button
             onClick={handleStartPlay}
             disabled={loading}
-            className="px-10 py-5 rounded-full bg-gradient-to-r from-red-800 via-amber-600 to-amber-500 hover:from-red-700 hover:to-amber-400 hover:scale-105 active:scale-95 text-black font-black text-xl tracking-wider uppercase shadow-2xl shadow-red-950/60 transition-all flex items-center gap-3 border border-amber-400/40"
+            className="px-10 py-5 rounded-full bg-amber-400 hover:bg-amber-300 active:scale-95 text-black font-black text-xl tracking-wider uppercase shadow-2xl transition-all flex items-center gap-3 border-2 border-amber-300"
           >
             <Play className="w-6 h-6 fill-black" />
             <span>เริ่มฉาย END CREDIT</span>
@@ -368,7 +368,7 @@ export default function EndCreditTheaterPage() {
 
           {/* Final Ending Message */}
           <div className="py-72 text-center">
-            <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-gradient-to-tr from-red-800 to-amber-600 border-2 border-amber-400 flex items-center justify-center text-amber-200 shadow-2xl">
+            <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-2xl">
               <Star className="w-10 h-10 fill-amber-300 text-amber-300" />
             </div>
             <h3 className="text-6xl font-serif text-amber-300 mb-6 tracking-wider uppercase font-black">

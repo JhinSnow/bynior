@@ -248,7 +248,7 @@ export default function StaffScannerPage() {
               </p>
               <button
                 onClick={() => startCamera()}
-                className="py-3 px-6 rounded-2xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 hover:from-red-600 hover:to-amber-400 text-black font-black text-sm tracking-wider uppercase shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center gap-2"
+                className="py-3 px-6 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-sm tracking-wider uppercase shadow-lg border border-amber-300 active:scale-95 transition-all flex items-center gap-2"
               >
                 <Camera className="w-4 h-4" />
                 <span>เปิดกล้องสแกน</span>
@@ -261,7 +261,7 @@ export default function StaffScannerPage() {
               {cameras.length > 1 && (
                 <button
                   onClick={handleSwitchCamera}
-                  className="p-2.5 rounded-full bg-slate-900/90 border border-slate-700 text-amber-400 hover:text-white backdrop-blur-md"
+                  className="p-2.5 rounded-full bg-neutral-900 border border-neutral-700 text-amber-400 hover:text-white shadow-md"
                   title="สลับกล้อง"
                 >
                   <SwitchCamera className="w-4 h-4" />
@@ -269,7 +269,7 @@ export default function StaffScannerPage() {
               )}
               <button
                 onClick={stopCamera}
-                className="px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700 text-xs font-semibold text-white hover:bg-slate-800 backdrop-blur-md"
+                className="px-3.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-700 text-xs font-semibold text-white hover:bg-neutral-800 shadow-md"
               >
                 ปิดกล้อง
               </button>
@@ -351,8 +351,8 @@ export default function StaffScannerPage() {
 
       {/* Confirmation Modal Pop-up */}
       {verifyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in select-none">
-          <div className="relative w-full max-w-sm bg-neutral-950 border border-amber-500/40 rounded-3xl p-6 shadow-2xl text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 animate-fade-in select-none">
+          <div className="relative w-full max-w-sm bg-neutral-950 border-2 border-amber-500 rounded-3xl p-6 shadow-2xl text-center">
             <button
               onClick={() => {
                 setVerifyModal(null);
@@ -363,7 +363,7 @@ export default function StaffScannerPage() {
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-gradient-to-tr from-red-800 to-amber-600 border border-amber-400 flex items-center justify-center text-amber-200 shadow-lg">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-md">
               <ShieldCheck className="w-7 h-7" />
             </div>
 
@@ -405,7 +405,7 @@ export default function StaffScannerPage() {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleConfirmRedeem}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 hover:from-red-600 hover:to-amber-400 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider shadow-lg border border-amber-300 flex items-center justify-center gap-1.5"
               >
                 {actionLoading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />

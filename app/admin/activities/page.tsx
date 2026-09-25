@@ -145,8 +145,8 @@ export default function ActivitiesPage() {
           onClick={() => setActiveSubTab('lucky-draw')}
           className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
             activeSubTab === 'lucky-draw'
-              ? 'bg-gradient-to-r from-red-700 via-amber-600 to-amber-400 text-black shadow-lg shadow-amber-500/20'
-              : 'bg-neutral-900/80 text-neutral-400 hover:text-white border border-neutral-800'
+              ? 'bg-amber-400 text-black border border-amber-300'
+              : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
           }`}
         >
           <Trophy className="w-4 h-4" />
@@ -157,8 +157,8 @@ export default function ActivitiesPage() {
           onClick={() => setActiveSubTab('coupons')}
           className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 ${
             activeSubTab === 'coupons'
-              ? 'bg-gradient-to-r from-red-700 via-amber-600 to-amber-400 text-black shadow-lg shadow-amber-500/20'
-              : 'bg-neutral-900/80 text-neutral-400 hover:text-white border border-neutral-800'
+              ? 'bg-amber-400 text-black border border-amber-300'
+              : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
           }`}
         >
           <Utensils className="w-4 h-4" />
@@ -198,7 +198,7 @@ export default function ActivitiesPage() {
 
           {/* Interactive Draw Machine */}
           <div className="bg-neutral-950 border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden shadow-2xl">
-            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-tr from-red-800 to-amber-600 border border-amber-400 flex items-center justify-center text-amber-200 shadow-xl">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-xl">
               <Trophy className="w-8 h-8" />
             </div>
 
@@ -225,7 +225,7 @@ export default function ActivitiesPage() {
 
             {/* Display Screen */}
             <div className="max-w-lg mx-auto bg-black border-2 border-amber-500/60 rounded-3xl p-6 mb-6 shadow-2xl relative overflow-hidden">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-amber-400/80 font-mono mb-2 font-bold flex items-center justify-center gap-1.5">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-amber-400 font-mono mb-2 font-bold flex items-center justify-center gap-1.5">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                 <span>WINNER ANNOUNCEMENT</span>
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -236,7 +236,7 @@ export default function ActivitiesPage() {
             </div>
 
             {luckyError && (
-              <div className="max-w-md mx-auto mb-4 p-3 rounded-xl bg-red-950/80 border border-red-500/60 text-red-200 text-xs flex items-center gap-2">
+              <div className="max-w-md mx-auto mb-4 p-3 rounded-xl bg-red-950 border border-red-500/60 text-red-200 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
                 <span>{luckyError}</span>
               </div>
@@ -245,7 +245,7 @@ export default function ActivitiesPage() {
             <button
               onClick={handleStartDraw}
               disabled={isDrawing || !luckyData?.stats?.eligibleCount}
-              className="py-4 px-8 rounded-2xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 hover:from-red-600 hover:to-amber-400 text-black font-black text-base uppercase tracking-wider shadow-2xl shadow-red-900/40 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50"
+              className="py-4 px-8 rounded-2xl bg-amber-400 hover:bg-amber-300 text-black font-black text-base uppercase tracking-wider shadow-xl border border-amber-300 active:scale-95 transition-all inline-flex items-center gap-2 disabled:opacity-50"
             >
               <Sparkles className="w-5 h-5" />
               <span>{isDrawing ? 'กำลังสุ่มรายชื่อ...' : 'เริ่มหมุนสุ่มรางวัล'}</span>
@@ -320,7 +320,7 @@ export default function ActivitiesPage() {
                 <button
                   type="submit"
                   disabled={creatingCoupon}
-                  className="py-2.5 px-6 rounded-xl bg-gradient-to-r from-red-700 via-amber-600 to-amber-500 text-black font-black text-xs uppercase tracking-wider shadow-md"
+                  className="py-2.5 px-6 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider shadow-md border border-amber-300 transition-all"
                 >
                   {creatingCoupon ? 'กำลังบันทึก...' : 'บันทึกคูปองใหม่'}
                 </button>
