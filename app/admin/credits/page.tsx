@@ -319,22 +319,21 @@ export default function EndCreditTheaterPage() {
             </p>
           </div>
 
-          {/* Part 1: Attendees (ผู้เข้าร่วมงานที่ Checked-in เรียงตามรหัสนักศึกษา) */}
+          {/* Part 1: Attendees (ผู้เข้าร่วมงานที่ Checked-in แสดงเฉพาะชื่อ-นามสกุล) */}
           <div className="mb-56">
             <h2 className="text-5xl font-bold tracking-[0.2em] text-amber-300 border-b-2 border-amber-500/40 pb-6 inline-block mb-20 uppercase">
               ATTENDEES
             </h2>
 
-            <div className="grid grid-cols-2 gap-y-8 text-3xl text-slate-200 font-light">
+            <div className="grid grid-cols-2 gap-y-7 gap-x-12 text-3xl text-slate-100 font-light max-w-4xl mx-auto">
               {participants.length === 0 ? (
                 <div className="col-span-2 text-slate-500 text-2xl py-6">
                   (ยังไม่มีรายชื่อผู้เช็คชื่อเข้าร่วมงาน)
                 </div>
               ) : (
                 participants.map((p) => (
-                  <div key={p.id} className="flex justify-between px-16 tracking-wide">
-                    <span className="font-mono text-slate-500">{p.studentId}</span>
-                    <span className="font-medium text-white">{p.fullName}</span>
+                  <div key={p.id} className="text-center tracking-wide py-1">
+                    <span className="font-normal text-white">{p.fullName}</span>
                   </div>
                 ))
               )}

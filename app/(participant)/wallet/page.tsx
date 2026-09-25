@@ -146,8 +146,8 @@ export default function WalletPage() {
         )}
       </div>
 
-      {/* Safety Notice */}
-      <div className="text-center text-[11px] text-slate-500 mt-6 z-10 px-4">
+      {/* Safety Notice (always positioned below cards without overlap) */}
+      <div className="text-center text-[12px] text-slate-400/90 mt-8 mb-4 z-10 px-4 py-3 bg-slate-900/60 rounded-2xl border border-slate-800/80">
         🔒 ปลอดภัยด้วย Dynamic QR Code ที่หมุนเปลี่ยนรหัสอัตโนมัติ ห้ามแคปเจอร์ภาพหน้าจอส่งต่อ
       </div>
     </div>

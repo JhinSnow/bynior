@@ -25,9 +25,9 @@ export async function GET() {
 
     // จัดกลุ่มตามลำดับแท็บที่กำหนด
     const groupDefinitions: { category: OrganizerCategory; label: string }[] = [
-      { category: OrganizerCategory.PERFORMANCE_1, label: 'กลุ่มการแสดงที่ 1' },
-      { category: OrganizerCategory.PERFORMANCE_2, label: 'กลุ่มการแสดงที่ 2' },
-      { category: OrganizerCategory.PERFORMANCE_3, label: 'กลุ่มการแสดงที่ 3' },
+      { category: OrganizerCategory.PERFORMANCE_1, label: 'ผู้ร่วมจัด 1' },
+      { category: OrganizerCategory.PERFORMANCE_2, label: 'ผู้ร่วมจัด 2' },
+      { category: OrganizerCategory.PERFORMANCE_3, label: 'ผู้ร่วมจัด 3' },
       { category: OrganizerCategory.CLUB, label: 'ชุมนุม' },
       { category: OrganizerCategory.SAMO, label: 'สโมสร' },
     ];

@@ -107,7 +107,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="กรอกรหัสผ่าน (ByeniorSamoSci)"
+                placeholder="กรอกรหัสผ่านเข้าใช้งาน"
                 className="w-full px-4 py-3.5 bg-slate-950 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
               />
             </div>

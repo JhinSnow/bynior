@@ -62,8 +62,16 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
         </span>
       </div>
 
-      {/* Cards Deck */}
-      <div className="relative min-h-[460px] pb-12">
+      {/* Cards Deck Container with dynamic responsive height */}
+      <div
+        className="relative transition-all duration-300 ease-out"
+        style={{
+          minHeight: isExpanded
+            ? `${Math.max(280, (coupons.length - 1) * 145 + 170)}px`
+            : `${Math.max(260, (coupons.length - 1) * 45 + 180)}px`,
+          marginBottom: '24px',
+        }}
+      >
         <AnimatePresence>
           {coupons.map((coupon, index) => {
             const colorGradient = CARD_COLORS[index % CARD_COLORS.length];
