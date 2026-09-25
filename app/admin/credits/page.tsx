@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Play, RotateCcw, Volume2, ArrowLeft, Star, Film } from 'lucide-react';
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, Volume2, ArrowLeft, Star, Film, Bug, FastForward, Gauge } from 'lucide-react';
 import Link from 'next/link';
 
 declare global {
@@ -44,11 +44,18 @@ export default function EndCreditTheaterPage() {
   const [controlsVisible, setControlsVisible] = useState(true);
   const [currentSongIndex, setCurrentSongIndex] = useState<1 | 2>(1);
 
+  // Debug Mode & Speed Controls (สำหรับตรวจสอบความเร็วและคำใน End Credit)
+  const [debugMode, setDebugMode] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [progressPercent, setProgressPercent] = useState<number>(0);
+  const speedRef = useRef<number>(1);
+  const virtualElapsedRef = useRef<number>(0);
+  const lastTimestampRef = useRef<number | null>(null);
+
   // Animation timeline sync
   const [offsetY, setOffsetY] = useState<number>(1920);
   const contentRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number | null>(null);
 
   // YouTube Players
   const player1Ref = useRef<any>(null);
@@ -195,16 +202,53 @@ export default function EndCreditTheaterPage() {
     }
   };
 
+  // Set speed ref when speed changes
+  const changeSpeed = (speed: number) => {
+    setPlaybackSpeed(speed);
+    speedRef.current = speed;
+  };
+
   // Start Playback
   const handleStartPlay = () => {
     setIsPlaying(true);
     setIsCompleted(false);
     setControlsVisible(false);
-    startTimeRef.current = null;
+    lastTimestampRef.current = null;
 
     // เล่นเพลงที่ 1
     setCurrentSongIndex(1);
     player1Ref.current?.playVideo();
+  };
+
+  // Toggle Pause (Debug mode)
+  const handleTogglePause = () => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      player1Ref.current?.pauseVideo();
+      player2Ref.current?.pauseVideo();
+    } else {
+      setIsPlaying(true);
+      lastTimestampRef.current = null;
+      if (currentSongIndex === 1) {
+        player1Ref.current?.playVideo();
+      } else {
+        player2Ref.current?.playVideo();
+      }
+    }
+  };
+
+  // Jump to specific percentage (0 to 100)
+  const handleSeek = (percent: number) => {
+    const fraction = Math.max(0, Math.min(1, percent / 100));
+    virtualElapsedRef.current = fraction * totalDuration;
+    setProgressPercent(fraction * 100);
+
+    if (contentRef.current) {
+      const contentHeight = contentRef.current.offsetHeight;
+      const totalDistance = 1920 + contentHeight - 960;
+      const currentY = 1920 - fraction * totalDistance;
+      setOffsetY(currentY);
+    }
   };
 
   // Reset
@@ -213,7 +257,9 @@ export default function EndCreditTheaterPage() {
     setIsPlaying(false);
     setIsCompleted(false);
     setOffsetY(1920);
-    startTimeRef.current = null;
+    virtualElapsedRef.current = 0;
+    setProgressPercent(0);
+    lastTimestampRef.current = null;
     player1Ref.current?.stopVideo();
     player2Ref.current?.stopVideo();
     player1Ref.current?.seekTo(0);
@@ -221,19 +267,27 @@ export default function EndCreditTheaterPage() {
     setControlsVisible(true);
   };
 
-  // Scroll Animation loop synced with timeline
+  // Scroll Animation loop with speed multiplier
   useEffect(() => {
     if (!isPlaying) return;
 
     const animate = (timestamp: number) => {
-      if (!startTimeRef.current) startTimeRef.current = timestamp;
-      const elapsed = (timestamp - startTimeRef.current) / 1000;
+      if (lastTimestampRef.current === null) {
+        lastTimestampRef.current = timestamp;
+      }
+      const deltaSec = (timestamp - lastTimestampRef.current) / 1000;
+      lastTimestampRef.current = timestamp;
+
+      // เพิ่มเวลาตาม speed multiplier
+      virtualElapsedRef.current += deltaSec * speedRef.current;
+      const elapsed = virtualElapsedRef.current;
 
       if (contentRef.current) {
         const contentHeight = contentRef.current.offsetHeight;
         // ปลายทาง: รายชื่อคนสุดท้ายของสโมสรเลื่อนขึ้นมาถึงกึ่งกลางหน้าจอพอดี
         const totalDistance = 1920 + contentHeight - 960;
         const progress = Math.min(elapsed / totalDuration, 1);
+        setProgressPercent(progress * 100);
 
         const currentY = 1920 - progress * totalDistance;
         setOffsetY(currentY);
@@ -256,11 +310,16 @@ export default function EndCreditTheaterPage() {
 
   // ซ่อน/แสดง Controls เมื่อเมาส์ขยับ
   useEffect(() => {
+    if (debugMode) {
+      setControlsVisible(true);
+      return;
+    }
+
     let timeout: NodeJS.Timeout;
     const handleMouseMove = () => {
       setControlsVisible(true);
       clearTimeout(timeout);
-      if (isPlaying) {
+      if (isPlaying && !debugMode) {
         timeout = setTimeout(() => setControlsVisible(false), 3000);
       }
     };
@@ -270,7 +329,7 @@ export default function EndCreditTheaterPage() {
       window.removeEventListener('mousemove', handleMouseMove);
       clearTimeout(timeout);
     };
-  }, [isPlaying]);
+  }, [isPlaying, debugMode]);
 
   return (
     <div
@@ -303,6 +362,20 @@ export default function EndCreditTheaterPage() {
             <span>Soundtrack #{currentSongIndex}</span>
           </div>
 
+          {/* Debug Mode Toggle */}
+          <button
+            onClick={() => setDebugMode(!debugMode)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-md transition-all ${
+              debugMode
+                ? 'bg-amber-400 text-black border-amber-300'
+                : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
+            }`}
+            title="สลับโหมด Debug สำหรับตรวจสอบคำและความเร็ว"
+          >
+            <Bug className="w-3.5 h-3.5" />
+            <span>Debug</span>
+          </button>
+
           <button
             onClick={toggleFullscreen}
             className="p-2 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white shadow-md"
@@ -322,6 +395,74 @@ export default function EndCreditTheaterPage() {
           )}
         </div>
       </div>
+
+      {/* Floating Debug Toolbar when Debug Mode is ON */}
+      {debugMode && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-neutral-950/95 border-2 border-amber-400 rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 max-w-xl w-[92%] sm:w-auto font-sans">
+          <div className="flex items-center justify-between gap-4 text-xs font-mono text-amber-300 border-b border-neutral-800 pb-2">
+            <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider">
+              <Gauge className="w-4 h-4 text-amber-400" />
+              <span>DEBUG CONTROL PANEL</span>
+            </span>
+            <span className="text-neutral-400">
+              Progress: <strong className="text-white">{progressPercent.toFixed(1)}%</strong> • Speed: <strong className="text-amber-400">{playbackSpeed}x</strong>
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Play / Pause Toggle Button */}
+            <button
+              onClick={handleTogglePause}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs flex items-center gap-1.5 transition-all active:scale-95"
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-black" /> : <Play className="w-3.5 h-3.5 fill-black" />}
+              <span>{isPlaying ? 'หยุดชั่วคราว (Pause)' : 'เล่นต่อ (Play)'}</span>
+            </button>
+
+            {/* Speed Multipliers */}
+            <div className="flex items-center gap-1 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
+              <FastForward className="w-3.5 h-3.5 text-neutral-400 ml-1.5 mr-1" />
+              {[1, 2, 4, 8, 16].map((spd) => (
+                <button
+                  key={spd}
+                  onClick={() => changeSpeed(spd)}
+                  className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                    playbackSpeed === spd
+                      ? 'bg-amber-400 text-black shadow-sm font-black'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                  }`}
+                >
+                  {spd}x
+                </button>
+              ))}
+            </div>
+
+            {/* Reset Button */}
+            <button
+              onClick={handleReset}
+              className="px-2.5 py-1.5 rounded-xl bg-neutral-900 hover:bg-red-950 text-neutral-400 hover:text-red-300 border border-neutral-800 text-xs flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
+            </button>
+          </div>
+
+          {/* Scrub Slider */}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[10px] text-neutral-500 font-mono">0%</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={0.1}
+              value={progressPercent}
+              onChange={(e) => handleSeek(parseFloat(e.target.value))}
+              className="w-full accent-amber-400 cursor-pointer h-2 bg-neutral-800 rounded-lg"
+            />
+            <span className="text-[10px] text-neutral-500 font-mono">100%</span>
+          </div>
+        </div>
+      )}
 
       {/* Start Playback Screen Overlay */}
       {!isPlaying && !isCompleted && (
