@@ -542,90 +542,51 @@ export default function EndCreditTheaterPage() {
             </p>
           </div>
 
-          {/* 2-Column Main Stage: Left = Photo Placeholder Stack, Right = Names List */}
-          <div className="grid grid-cols-12 gap-8 items-start mb-40 text-left">
-            {/* Left Zone: Photo Placeholders (เลื่อนไปพร้อมรายชื่อ) */}
-            <div className="col-span-5 flex flex-col gap-16 sticky top-20">
-              {/* Photo Card 1 */}
-              <div className="bg-neutral-900 border-4 border-amber-400/80 rounded-2xl p-4 shadow-2xl flex flex-col">
-                <div className="w-full aspect-[4/3] bg-neutral-950 border-2 border-dashed border-amber-500/40 rounded-xl flex flex-col items-center justify-center gap-4 text-amber-300/80 group">
-                  <div className="w-20 h-20 rounded-full bg-neutral-900 border border-amber-400/50 flex items-center justify-center shadow-lg">
-                    <ImageIcon className="w-10 h-10 text-amber-400" />
+          {/* 2-Column Main Stage: Left = Photo Placeholder, Right = Names List (Single Column) */}
+          <div className="grid grid-cols-12 gap-10 items-stretch mb-40 text-left relative">
+            {/* Left Zone: Single Photo Placeholder Container that stretches with names */}
+            <div className="col-span-5 relative">
+              <div className="sticky top-40 w-full">
+                <div className="bg-neutral-900 border-4 border-amber-400 rounded-3xl p-5 shadow-2xl flex flex-col">
+                  <div className="w-full aspect-[3/4] bg-neutral-950 border-2 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center gap-5 text-amber-300">
+                    <div className="w-24 h-24 rounded-full bg-neutral-900 border-2 border-amber-400/60 flex items-center justify-center shadow-xl">
+                      <ImageIcon className="w-12 h-12 text-amber-400" />
+                    </div>
+                    <div className="text-center px-4">
+                      <p className="text-2xl font-black tracking-widest uppercase text-amber-300">PHOTO PLACEHOLDER</p>
+                      <p className="text-sm text-neutral-400 mt-2 font-mono tracking-wider">MEMORIES OF BYENIOR 2026</p>
+                    </div>
                   </div>
-                  <div className="text-center px-4">
-                    <p className="text-xl font-bold tracking-widest uppercase text-amber-300">PHOTO PLACEHOLDER</p>
-                    <p className="text-sm text-neutral-400 mt-1 font-mono tracking-wide">MEMORIES OF BYENIOR 2026</p>
+                  <div className="mt-4 flex items-center justify-between text-xs text-neutral-400 font-mono px-2">
+                    <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Sci-lywood Archives</span>
+                    </span>
+                    <span>ROLL #01</span>
                   </div>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400 font-mono px-1">
-                  <span className="flex items-center gap-1.5 text-amber-400">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Sci-lywood Archives</span>
-                  </span>
-                  <span>ROLL #01</span>
-                </div>
-              </div>
-
-              {/* Photo Card 2 */}
-              <div className="bg-neutral-900 border-4 border-red-700/80 rounded-2xl p-4 shadow-2xl flex flex-col">
-                <div className="w-full aspect-[4/3] bg-neutral-950 border-2 border-dashed border-red-500/40 rounded-xl flex flex-col items-center justify-center gap-4 text-red-300/80">
-                  <div className="w-20 h-20 rounded-full bg-neutral-900 border border-red-500/50 flex items-center justify-center shadow-lg">
-                    <Heart className="w-10 h-10 text-red-400" />
-                  </div>
-                  <div className="text-center px-4">
-                    <p className="text-xl font-bold tracking-widest uppercase text-red-300">FRIENDSHIP & MEMORIES</p>
-                    <p className="text-sm text-neutral-400 mt-1 font-mono tracking-wide">CLASS OF 2026</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400 font-mono px-1">
-                  <span className="flex items-center gap-1.5 text-red-400">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Special Moments</span>
-                  </span>
-                  <span>ROLL #02</span>
-                </div>
-              </div>
-
-              {/* Photo Card 3 */}
-              <div className="bg-neutral-900 border-4 border-amber-400/80 rounded-2xl p-4 shadow-2xl flex flex-col">
-                <div className="w-full aspect-[4/3] bg-neutral-950 border-2 border-dashed border-amber-500/40 rounded-xl flex flex-col items-center justify-center gap-4 text-amber-300/80">
-                  <div className="w-20 h-20 rounded-full bg-neutral-900 border border-amber-400/50 flex items-center justify-center shadow-lg">
-                    <Film className="w-10 h-10 text-amber-400" />
-                  </div>
-                  <div className="text-center px-4">
-                    <p className="text-xl font-bold tracking-widest uppercase text-amber-300">FACULTY OF SCIENCE</p>
-                    <p className="text-sm text-neutral-400 mt-1 font-mono tracking-wide">JOURNEY TOGETHER</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400 font-mono px-1">
-                  <span className="flex items-center gap-1.5 text-amber-400">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Sci-lywood Highlights</span>
-                  </span>
-                  <span>ROLL #03</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Zone: All Names (Attendees + Staff & Organizers) */}
-            <div className="col-span-7 flex flex-col pl-4 text-left">
-              {/* Part 1: Attendees */}
-              <div className="mb-32">
+            {/* Right Zone: All Names (Single column list) */}
+            <div className="col-span-7 flex flex-col pl-6 text-left border-l-2 border-neutral-800/80">
+              {/* Part 1: Attendees (Single Column) */}
+              <div className="mb-36">
                 <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
-                  <h2 className="text-4xl font-bold tracking-[0.2em] text-amber-300 uppercase">
+                  <h2 className="text-4xl font-black tracking-[0.2em] text-amber-300 uppercase">
                     ATTENDEES
                   </h2>
                   <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ผู้เข้าร่วมงาน BYENIOR 2026</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-y-5 gap-x-6 text-2xl text-slate-100 font-light">
+                <div className="flex flex-col space-y-5 text-3xl text-slate-100 font-light">
                   {participants.length === 0 ? (
-                    <div className="col-span-2 text-slate-500 text-xl py-6 italic">
+                    <div className="text-slate-500 text-2xl py-6 italic">
                       (ยังไม่มีรายชื่อผู้เช็คชื่อเข้าร่วมงาน)
                     </div>
                   ) : (
                     participants.map((p) => (
-                      <div key={p.id} className="tracking-wide py-0.5 border-b border-neutral-800/40">
+                      <div key={p.id} className="tracking-wide py-1 border-b border-neutral-800/40">
                         <span className="font-normal text-white">{p.fullName}</span>
                       </div>
                     ))
@@ -633,29 +594,23 @@ export default function EndCreditTheaterPage() {
                 </div>
               </div>
 
-              {/* Part 2: Staff & Organizers */}
+              {/* Part 2: Staff & Organizers (Single Column) */}
               {staffGroups.map((group) => (
-                <div key={group.category} className="mb-32">
+                <div key={group.category} className="mb-36">
                   <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
                     <h2 className="text-4xl font-black tracking-widest text-amber-400 uppercase">
                       {group.label}
                     </h2>
                     <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ทีมงานและคณะผู้จัดทำ</p>
                   </div>
-                  <div
-                    className={`${
-                      group.members.length > 20
-                        ? 'grid grid-cols-2 gap-y-5 gap-x-6'
-                        : 'space-y-5'
-                    } text-2xl text-slate-100 font-light`}
-                  >
+                  <div className="flex flex-col space-y-5 text-3xl text-slate-100 font-light">
                     {group.members.length === 0 ? (
-                      <p className="col-span-2 text-slate-500 text-xl italic">- ไม่พบรายชื่อ -</p>
+                      <p className="text-slate-500 text-2xl italic">- ไม่พบรายชื่อ -</p>
                     ) : (
                       group.members.map((m) => (
-                        <p key={m.id} className="tracking-wide font-normal text-white py-0.5 border-b border-neutral-800/40">
-                          {m.fullName}
-                        </p>
+                        <div key={m.id} className="tracking-wide py-1 border-b border-neutral-800/40">
+                          <span className="font-normal text-white">{m.fullName}</span>
+                        </div>
                       ))
                     )}
                   </div>
@@ -664,25 +619,25 @@ export default function EndCreditTheaterPage() {
             </div>
           </div>
 
-          {/* Grand Transition: Centered Hero Photo Expanded to Large Size before THANK YOU */}
-          <div className="my-36 flex flex-col items-center justify-center">
-            <div className="w-full max-w-4xl bg-neutral-900 border-4 border-amber-400 rounded-3xl p-6 shadow-2xl">
-              <div className="w-full h-[520px] bg-neutral-950 border-4 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center gap-6 text-amber-300">
-                <div className="w-28 h-28 rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl">
-                  <ImageIcon className="w-14 h-14 text-amber-400" />
+          {/* Grand Transition: Centered Large Photo Expanded before THANK YOU */}
+          <div className="my-44 flex flex-col items-center justify-center animate-fade-in">
+            <div className="w-full max-w-4xl bg-neutral-900 border-4 border-amber-400 rounded-3xl p-6 shadow-2xl transition-all duration-700">
+              <div className="w-full h-[600px] bg-neutral-950 border-4 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center gap-6 text-amber-300">
+                <div className="w-32 h-32 rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl">
+                  <ImageIcon className="w-16 h-16 text-amber-400" />
                 </div>
                 <div className="text-center px-6">
-                  <p className="text-4xl font-black tracking-[0.25em] uppercase text-amber-300">
+                  <p className="text-5xl font-black tracking-[0.25em] uppercase text-amber-300">
                     FINAL MEMORIES PHOTO
                   </p>
-                  <p className="text-lg text-neutral-400 mt-2 font-mono tracking-widest uppercase">
+                  <p className="text-xl text-neutral-400 mt-3 font-mono tracking-widest uppercase">
                     FACULTY OF SCIENCE • CLASS OF 2026
                   </p>
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-between text-sm text-amber-400/80 font-mono px-3">
+              <div className="mt-4 flex items-center justify-between text-base text-amber-400/90 font-mono px-3">
                 <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <Sparkles className="w-5 h-5 text-amber-400" />
                   <span>Sci-lywood Grand Finale Showcase</span>
                 </span>
                 <span className="font-bold">BYENIOR 2026 OFFICIAL</span>
