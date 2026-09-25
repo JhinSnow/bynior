@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Play, Pause, RotateCcw, Volume2, ArrowLeft, Star, Film, Bug, FastForward, Gauge, Image as ImageIcon, Sparkles, Heart } from 'lucide-react';
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, Volume2, ArrowLeft, Star, Film, Bug, FastForward, Gauge, Image as ImageIcon, Sparkles, Heart, Music, Music2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 declare global {
@@ -29,8 +29,10 @@ interface StaffGroup {
   members: StaffMember[];
 }
 
-const SONG_1_ID = 'KQQ5YszMNfc';
-const SONG_2_ID = 'lxVPCXYN9ww';
+const SONG_1_ID = 'KQQ5YszMNfc'; // เมื่อถูกค้นพบ - FREEHAND
+const SONG_1_TITLE = 'เมื่อถูกค้นพบ - FREEHAND';
+const SONG_2_ID = 'xFHNWJVsjmY'; // If I Can Stop One Heart From Breaking - HOYO-MiX (Robin / Chevy)
+const SONG_2_TITLE = 'If I Can Stop One Heart From Breaking - HOYO-MiX';
 
 export default function EndCreditTheaterPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -44,6 +46,10 @@ export default function EndCreditTheaterPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [currentSongIndex, setCurrentSongIndex] = useState<1 | 2>(1);
+  const currentSongIndexRef = useRef<1 | 2>(1);
+  const [song1Status, setSong1Status] = useState<string>('Unloaded');
+  const [song2Status, setSong2Status] = useState<string>('Unloaded');
+  const [audioError, setAudioError] = useState<string | null>(null);
 
   // Debug Mode & Speed Controls (สำหรับตรวจสอบความเร็วและคำใน End Credit)
   const [debugMode, setDebugMode] = useState(false);
@@ -57,13 +63,30 @@ export default function EndCreditTheaterPage() {
   const [offsetY, setOffsetY] = useState<number>(1920);
   const contentRef = useRef<HTMLDivElement>(null);
   const animFrameRef = useRef<number | null>(null);
+  const namesSectionRef = useRef<HTMLDivElement>(null);
+  const photoCardRef = useRef<HTMLDivElement>(null);
+  const thankYouRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<number>(0);
+  // Simulated sticky & center transition: computed screen position for the photo overlay
+  const [photoLayout, setPhotoLayout] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    opacity: number;
+    isCentered: boolean;
+  }>({
+    x: 40,
+    y: -9999,
+    width: 420,
+    opacity: 1,
+    isCentered: false,
+  });
 
-  // YouTube Players
-  const player1Ref = useRef<any>(null);
-  const player2Ref = useRef<any>(null);
-  const [totalDuration, setTotalDuration] = useState<number>(480); // Default estimate ~8 min fallback
+  // Single YouTube Player Architecture (guarantees seamless transition without browser multi-iframe restrictions)
+  const playerRef = useRef<any>(null);
+  const [totalDuration, setTotalDuration] = useState<number>(444);
   const duration1Ref = useRef<number>(240);
-  const duration2Ref = useRef<number>(240);
+  const duration2Ref = useRef<number>(204);
 
   // Fetch attendees and credits from Database
   useEffect(() => {
@@ -86,52 +109,113 @@ export default function EndCreditTheaterPage() {
     }
 
     window.onYouTubeIframeAPIReady = () => {
-      initPlayers();
+      initPlayer();
     };
 
     if (window.YT && window.YT.Player) {
-      initPlayers();
+      initPlayer();
     }
   }, []);
 
-  const initPlayers = () => {
-    player1Ref.current = new window.YT.Player('yt-player-1', {
-      videoId: SONG_1_ID,
-      playerVars: { controls: 0, disablekb: 1, rel: 0 },
-      events: {
-        onReady: (event: any) => {
-          const d1 = event.target.getDuration() || 240;
-          duration1Ref.current = d1;
-          updateTotalDuration();
+  const initPlayer = () => {
+    try {
+      playerRef.current = new window.YT.Player('yt-player-unified', {
+        videoId: SONG_1_ID,
+        playerVars: { controls: 0, disablekb: 1, rel: 0, enablejsapi: 1 },
+        events: {
+          onReady: (event: any) => {
+            setSong1Status('Ready');
+            const d1 = event.target.getDuration();
+            if (d1 && d1 > 0) {
+              duration1Ref.current = Math.round(d1);
+              updateTotalDuration();
+            }
+          },
+          onStateChange: (event: any) => {
+            // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+            const activeIdx = currentSongIndexRef.current;
+            if (event.data === 1) {
+              if (activeIdx === 1) {
+                setSong1Status('Playing');
+                const d1 = playerRef.current?.getDuration();
+                if (d1 && d1 > 0) {
+                  duration1Ref.current = Math.round(d1);
+                  updateTotalDuration();
+                }
+              } else {
+                setSong2Status('Playing');
+                const d2 = playerRef.current?.getDuration();
+                if (d2 && d2 > 0) {
+                  duration2Ref.current = Math.round(d2);
+                  updateTotalDuration();
+                }
+              }
+            } else if (event.data === 2) {
+              if (activeIdx === 1) setSong1Status('Paused');
+              else setSong2Status('Paused');
+            } else if (event.data === 3) {
+              if (activeIdx === 1) setSong1Status('Buffering');
+              else setSong2Status('Buffering');
+            } else if (event.data === 0) {
+              // Song Ended
+              if (activeIdx === 1) {
+                // Song 1 ended -> transition to Song 2
+                setSong1Status('Ended');
+                setCurrentSongIndex(2);
+                currentSongIndexRef.current = 2;
+                setSong2Status('Loading & Playing...');
+                try {
+                  playerRef.current?.loadVideoById(SONG_2_ID);
+                  playerRef.current?.unMute();
+                  playerRef.current?.playVideo();
+                } catch (e: any) {
+                  setAudioError(`Song 2 load failed: ${e.message}`);
+                }
+              } else {
+                // Song 2 ended -> finish audio, DO NOT REPEAT
+                setSong2Status('Ended');
+                try {
+                  playerRef.current?.stopVideo();
+                } catch {}
+                // If scroll has reached THANK YOU (>= 98%), complete
+                if (progressRef.current >= 0.98) {
+                  setIsCompleted(true);
+                  setIsPlaying(false);
+                }
+              }
+            }
+          },
+          onError: (e: any) => {
+            const msg = `Audio error: code ${e.data} (150/101 = restricted by creator)`;
+            if (currentSongIndexRef.current === 1) setSong1Status(msg);
+            else setSong2Status(msg);
+            setAudioError(msg);
+          },
         },
-        onStateChange: (event: any) => {
-          // เมื่อเพลงที่ 1 เล่นจบ (State 0 = Ended) สั่งเล่นเพลงที่ 2 ต่อทันที
-          if (event.data === 0) {
-            setCurrentSongIndex(2);
-            player2Ref.current?.playVideo();
-          }
-        },
-      },
-    });
+      });
+    } catch (err: any) {
+      setAudioError(`Init error: ${err.message}`);
+    }
+  };
 
-    player2Ref.current = new window.YT.Player('yt-player-2', {
-      videoId: SONG_2_ID,
-      playerVars: { controls: 0, disablekb: 1, rel: 0 },
-      events: {
-        onReady: (event: any) => {
-          const d2 = event.target.getDuration() || 240;
-          duration2Ref.current = d2;
-          updateTotalDuration();
-        },
-        onStateChange: (event: any) => {
-          // เมื่อเพลงที่ 2 จบ เป็นอันเสร็จสิ้น
-          if (event.data === 0) {
-            setIsCompleted(true);
-            setIsPlaying(false);
-          }
-        },
-      },
-    });
+  // Helper to switch or test specific song directly from Debug Mode
+  const playSpecificSong = (songIdx: 1 | 2) => {
+    setCurrentSongIndex(songIdx);
+    currentSongIndexRef.current = songIdx;
+    setAudioError(null);
+    try {
+      playerRef.current?.unMute();
+      if (songIdx === 1) {
+        setSong1Status('Loading & Playing...');
+        playerRef.current?.loadVideoById(SONG_1_ID);
+      } else {
+        setSong2Status('Loading & Playing...');
+        playerRef.current?.loadVideoById(SONG_2_ID);
+      }
+      playerRef.current?.playVideo();
+    } catch (err: any) {
+      setAudioError(`Play error: ${err.message}`);
+    }
   };
 
   const updateTotalDuration = () => {
@@ -203,6 +287,101 @@ export default function EndCreditTheaterPage() {
     }
   };
 
+  // Helper to calculate photo layout (sticky on left -> smoothly center and expand before THANK YOU)
+  const calculatePhotoLayout = useCallback((currentY: number) => {
+    if (!namesSectionRef.current) return;
+
+    const namesTop = namesSectionRef.current.offsetTop;
+    const namesHeight = namesSectionRef.current.offsetHeight;
+
+    // Stable card dimensions (NO dynamic DOM measuring to prevent oscillation / flicker)
+    const STICKY_CARD_HEIGHT = 620;
+    const initialWidth = 420;
+    const stickyScreenY = Math.round((1920 - STICKY_CARD_HEIGHT) / 2); // 650px (Dead Center vertically)
+    const leftX = 40;
+
+    const targetWidth = 840; // enlarged width
+    const targetHeight = 1120; // 3:4 enlarged height
+    const centerX = (1080 - targetWidth) / 2; // 120px
+    const centerY = (1920 - targetHeight) / 2 - 40; // ~360px centered
+
+    const namesVisualTop = currentY + namesTop;
+    const namesVisualBottom = currentY + namesTop + namesHeight;
+
+    if (namesVisualTop > stickyScreenY) {
+      // 1. Before names reach center sticky point -> scrolls in naturally with content
+      setPhotoLayout({
+        x: leftX,
+        y: namesVisualTop,
+        width: initialWidth,
+        opacity: 1,
+        isCentered: false,
+      });
+    } else if (namesVisualBottom > stickyScreenY + STICKY_CARD_HEIGHT) {
+      // 2. Names are scrolling through -> photo stays pinned at dynamic vertical center
+      setPhotoLayout({
+        x: leftX,
+        y: stickyScreenY,
+        width: initialWidth,
+        opacity: 1,
+        isCentered: false,
+      });
+    } else {
+      // 3. Names ended -> transition smoothly to center & expand!
+      const distancePast = (stickyScreenY + STICKY_CARD_HEIGHT) - namesVisualBottom;
+
+      const MOVE_DURATION = 650; // Pixels to glide from left to center & expand
+      const HOLD_DURATION = 550; // Pixels to hold majestically in center spotlight
+      const FADE_DURATION = 350; // Pixels to dissolve smoothly into black
+
+      if (distancePast < MOVE_DURATION) {
+        // Moving from left to center and expanding smoothly
+        const t = Math.min(1, Math.max(0, distancePast / MOVE_DURATION));
+        const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+        const curX = leftX + (centerX - leftX) * ease;
+        const curY = stickyScreenY + (centerY - stickyScreenY) * ease;
+        const curWidth = initialWidth + (targetWidth - initialWidth) * ease;
+
+        setPhotoLayout({
+          x: curX,
+          y: curY,
+          width: curWidth,
+          opacity: 1,
+          isCentered: ease > 0.4,
+        });
+      } else if (distancePast < MOVE_DURATION + HOLD_DURATION) {
+        // Spotlight hold in dead center
+        setPhotoLayout({
+          x: centerX,
+          y: centerY,
+          width: targetWidth,
+          opacity: 1,
+          isCentered: true,
+        });
+      } else if (distancePast < MOVE_DURATION + HOLD_DURATION + FADE_DURATION) {
+        // Dissolving smoothly in place without moving or jumping
+        const fadeT = (distancePast - MOVE_DURATION - HOLD_DURATION) / FADE_DURATION;
+        setPhotoLayout({
+          x: centerX,
+          y: centerY,
+          width: targetWidth,
+          opacity: Math.max(0, 1 - fadeT),
+          isCentered: true,
+        });
+      } else {
+        // Fully dissolved and hidden offscreen
+        setPhotoLayout({
+          x: centerX,
+          y: -9999,
+          width: targetWidth,
+          opacity: 0,
+          isCentered: true,
+        });
+      }
+    }
+  }, []);
+
   // Set speed ref when speed changes
   const changeSpeed = (speed: number) => {
     setPlaybackSpeed(speed);
@@ -216,11 +395,16 @@ export default function EndCreditTheaterPage() {
     setIsCompleted(false);
     setControlsVisible(false);
     lastTimestampRef.current = null;
+    progressRef.current = 0;
 
     // เล่นเพลงที่ 1
     setCurrentSongIndex(1);
+    currentSongIndexRef.current = 1;
+    setAudioError(null);
     try {
-      player1Ref.current?.playVideo();
+      playerRef.current?.unMute();
+      playerRef.current?.loadVideoById(SONG_1_ID);
+      playerRef.current?.playVideo();
     } catch {}
   };
 
@@ -236,19 +420,14 @@ export default function EndCreditTheaterPage() {
       // Pause
       setIsPaused(true);
       try {
-        player1Ref.current?.pauseVideo();
-        player2Ref.current?.pauseVideo();
+        playerRef.current?.pauseVideo();
       } catch {}
     } else {
       // Resume
       setIsPaused(false);
       lastTimestampRef.current = null;
       try {
-        if (currentSongIndex === 1) {
-          player1Ref.current?.playVideo();
-        } else {
-          player2Ref.current?.playVideo();
-        }
+        playerRef.current?.playVideo();
       } catch {}
     }
   };
@@ -256,14 +435,20 @@ export default function EndCreditTheaterPage() {
   // Jump to specific percentage (0 to 100)
   const handleSeek = (percent: number) => {
     const fraction = Math.max(0, Math.min(1, percent / 100));
-    virtualElapsedRef.current = fraction * totalDuration;
+    const scrollTargetDuration = Math.max(60, totalDuration - 12);
+    virtualElapsedRef.current = fraction * scrollTargetDuration;
     setProgressPercent(fraction * 100);
+    progressRef.current = fraction;
 
     if (contentRef.current) {
-      const contentHeight = contentRef.current.offsetHeight;
-      const totalDistance = 1920 + contentHeight - 960;
+      const thankYouTop = thankYouRef.current ? thankYouRef.current.offsetTop : contentRef.current.offsetHeight - 400;
+      const thankYouHeight = thankYouRef.current ? thankYouRef.current.offsetHeight : 600;
+      const thankYouCenter = thankYouTop + thankYouHeight / 2;
+      const totalDistance = 960 + thankYouCenter;
+
       const currentY = 1920 - fraction * totalDistance;
       setOffsetY(currentY);
+      calculatePhotoLayout(currentY);
     }
   };
 
@@ -273,17 +458,25 @@ export default function EndCreditTheaterPage() {
     setIsPlaying(false);
     setIsPaused(false);
     setIsCompleted(false);
+    setCurrentSongIndex(1);
+    currentSongIndexRef.current = 1;
     setOffsetY(1920);
     virtualElapsedRef.current = 0;
     setProgressPercent(0);
+    progressRef.current = 0;
     lastTimestampRef.current = null;
     try {
-      player1Ref.current?.stopVideo();
-      player2Ref.current?.stopVideo();
-      player1Ref.current?.seekTo(0);
-      player2Ref.current?.seekTo(0);
+      playerRef.current?.stopVideo();
+      playerRef.current?.seekTo(0);
     } catch {}
     setControlsVisible(true);
+    setPhotoLayout({
+      x: 40,
+      y: -9999,
+      width: 420,
+      opacity: 1,
+      isCentered: false,
+    });
   };
 
   // Scroll Animation loop with speed multiplier and pause check
@@ -302,20 +495,31 @@ export default function EndCreditTheaterPage() {
       const elapsed = virtualElapsedRef.current;
 
       if (contentRef.current) {
-        const contentHeight = contentRef.current.offsetHeight;
-        // ปลายทาง: ให้ข้อความช่วงท้ายเลื่อนมาจบอย่างสวยงาม
-        const totalDistance = 1920 + contentHeight - 960;
-        const progress = Math.min(elapsed / totalDuration, 1);
+        const thankYouTop = thankYouRef.current ? thankYouRef.current.offsetTop : contentRef.current.offsetHeight - 400;
+        const thankYouHeight = thankYouRef.current ? thankYouRef.current.offsetHeight : 600;
+        const thankYouCenter = thankYouTop + thankYouHeight / 2;
+        // ปลายทาง: ให้ข้อความ THANK YOU เลื่อนมาหยุดที่กึ่งกลางจอ (Y = 960) พอดีเป๊ะ
+        const totalDistance = 960 + thankYouCenter;
+
+        // สิ้นสุดการเลื่อนก่อนเพลงจบ 12 วินาที เพื่อให้จอค้างที่หน้า THANK YOU พร้อมเสียงดนตรีช่วงท้าย
+        const scrollTargetDuration = Math.max(60, totalDuration - 12);
+        const progress = Math.min(elapsed / scrollTargetDuration, 1);
+        progressRef.current = progress;
         setProgressPercent(progress * 100);
 
         const currentY = 1920 - progress * totalDistance;
         setOffsetY(currentY);
+        calculatePhotoLayout(currentY);
 
         if (progress >= 1) {
-          setIsCompleted(true);
-          setIsPlaying(false);
-          setIsPaused(false);
-          return;
+          // ถึงหน้า THANK YOU แล้ว จอดค้างตรงกลาง
+          // ถ้าเล่นจนครบเวลาเพลงทั้งหมดแล้ว หรือเพลงที่ 2 จบแล้ว ให้จบสมบูรณ์
+          if (elapsed >= totalDuration || (currentSongIndexRef.current === 2 && song2Status === 'Ended')) {
+            setIsCompleted(true);
+            setIsPlaying(false);
+            setIsPaused(false);
+            return;
+          }
         }
       }
 
@@ -326,7 +530,7 @@ export default function EndCreditTheaterPage() {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isPlaying, isPaused, totalDuration]);
+  }, [isPlaying, isPaused, totalDuration, song2Status]);
 
   // ซ่อน/แสดง Controls เมื่อเมาส์ขยับ
   useEffect(() => {
@@ -356,10 +560,9 @@ export default function EndCreditTheaterPage() {
       ref={containerRef}
       className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none relative font-luxurious"
     >
-      {/* Hidden YouTube Audio Players */}
-      <div className="hidden pointer-events-none">
-        <div id="yt-player-1" />
-        <div id="yt-player-2" />
+      {/* Single YouTube Audio Player (off-screen so browser plays without throttling) */}
+      <div className="absolute -left-[9999px] -top-[9999px] w-[200px] h-[200px] opacity-0 pointer-events-none">
+        <div id="yt-player-unified" />
       </div>
 
       {/* Floating Minimal Controls */}
@@ -368,33 +571,41 @@ export default function EndCreditTheaterPage() {
           controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <Link
-          href="/admin/activities"
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white text-xs shadow-md"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>กลับหน้า Admin</span>
-        </Link>
+        {!isFullscreen ? (
+          <Link
+            href="/admin/activities"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white text-xs shadow-md"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>กลับหน้า Admin</span>
+          </Link>
+        ) : (
+          <div />
+        )}
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-700 text-[11px] text-amber-400 font-mono shadow-md">
-            <Volume2 className="w-3.5 h-3.5 animate-pulse" />
-            <span>Soundtrack #{currentSongIndex}</span>
-          </div>
+          {!isFullscreen && (
+            <>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-700 text-[11px] text-amber-400 font-mono shadow-md">
+                <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                <span>Soundtrack #{currentSongIndex}</span>
+              </div>
 
-          {/* Debug Mode Toggle */}
-          <button
-            onClick={() => setDebugMode(!debugMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-md transition-all ${
-              debugMode
-                ? 'bg-amber-400 text-black border-amber-300'
-                : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
-            }`}
-            title="สลับโหมด Debug สำหรับตรวจสอบคำและความเร็ว"
-          >
-            <Bug className="w-3.5 h-3.5" />
-            <span>Debug</span>
-          </button>
+              {/* Debug Mode Toggle */}
+              <button
+                onClick={() => setDebugMode(!debugMode)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border shadow-md transition-all ${
+                  debugMode
+                    ? 'bg-amber-400 text-black border-amber-300'
+                    : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
+                }`}
+                title="สลับโหมด Debug สำหรับตรวจสอบคำและความเร็ว"
+              >
+                <Bug className="w-3.5 h-3.5" />
+                <span>Debug</span>
+              </button>
+            </>
+          )}
 
           <button
             onClick={toggleFullscreen}
@@ -404,7 +615,7 @@ export default function EndCreditTheaterPage() {
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
 
-          {isPlaying && (
+          {!isFullscreen && isPlaying && (
             <button
               onClick={handleReset}
               className="p-2 rounded-full bg-red-950 border border-red-700 text-red-200 hover:bg-red-900 shadow-md"
@@ -416,8 +627,8 @@ export default function EndCreditTheaterPage() {
         </div>
       </div>
 
-      {/* Floating Debug Toolbar when Debug Mode is ON */}
-      {debugMode && (
+      {/* Floating Debug Toolbar when Debug Mode is ON (hidden in fullscreen to keep theater view clean) */}
+      {debugMode && !isFullscreen && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-neutral-950/95 border-2 border-amber-400 rounded-2xl p-3 shadow-2xl flex flex-col gap-2.5 max-w-xl w-[92%] sm:w-auto font-sans">
           <div className="flex items-center justify-between gap-4 text-xs font-mono text-amber-300 border-b border-neutral-800 pb-2">
             <span className="flex items-center gap-1.5 font-bold uppercase tracking-wider">
@@ -481,6 +692,101 @@ export default function EndCreditTheaterPage() {
             />
             <span className="text-[10px] text-neutral-500 font-mono">100%</span>
           </div>
+
+          {/* Soundtracks Debug & Testing Section */}
+          <div className="mt-1 pt-2 border-t border-neutral-800 flex flex-col gap-1.5 text-xs">
+            <div className="flex items-center justify-between text-neutral-400">
+              <span className="flex items-center gap-1 font-bold text-amber-300">
+                <Music className="w-3.5 h-3.5" />
+                <span>SOUNDTRACK AUDIT & TEST</span>
+              </span>
+              <span className="text-[11px] font-mono text-neutral-400">
+                Playing: <strong className="text-amber-400 font-bold">#{currentSongIndex}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-0.5">
+              {/* Song 1 Card */}
+              <div
+                className={`p-2 rounded-xl border flex flex-col gap-1 transition-all ${
+                  currentSongIndex === 1
+                    ? 'bg-amber-400/10 border-amber-400/60'
+                    : 'bg-neutral-900 border-neutral-800'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200 truncate text-[11px]">
+                    #1: {SONG_1_TITLE}
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                      song1Status === 'Playing'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : song1Status.startsWith('Error')
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    {song1Status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-neutral-500 font-mono">{duration1Ref.current.toFixed(0)}s</span>
+                  <button
+                    onClick={() => playSpecificSong(1)}
+                    className="px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-black font-bold text-[11px] flex items-center gap-1 active:scale-95 transition-all"
+                  >
+                    <Play className="w-3 h-3 fill-black" />
+                    <span>ทดสอบเปิดเพลง 1</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Song 2 Card */}
+              <div
+                className={`p-2 rounded-xl border flex flex-col gap-1 transition-all ${
+                  currentSongIndex === 2
+                    ? 'bg-amber-400/10 border-amber-400/60'
+                    : 'bg-neutral-900 border-neutral-800'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-200 truncate text-[11px]">
+                    #2: {SONG_2_TITLE}
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${
+                      song2Status === 'Playing'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : song2Status.startsWith('Error')
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    {song2Status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-neutral-500 font-mono">{duration2Ref.current.toFixed(0)}s</span>
+                  <button
+                    onClick={() => playSpecificSong(2)}
+                    className="px-2.5 py-1 rounded bg-amber-400 hover:bg-amber-300 text-black font-bold text-[11px] flex items-center gap-1 active:scale-95 transition-all"
+                  >
+                    <Play className="w-3 h-3 fill-black" />
+                    <span>ทดสอบเปิดเพลง 2</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Error Banner if any */}
+            {audioError && (
+              <div className="p-2 rounded-lg bg-red-950/80 border border-red-800 text-red-300 text-[11px] flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                <span className="font-mono">{audioError}</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -522,11 +828,11 @@ export default function EndCreditTheaterPage() {
         {/* Scroll Content Track */}
         <div
           ref={contentRef}
-          className="w-full text-center px-16 will-change-transform"
+          className="w-full text-center will-change-transform"
           style={{ transform: `translate3d(0, ${offsetY}px, 0)` }}
         >
           {/* Header */}
-          <div className="mb-32">
+          <div className="mb-32 px-16">
             <div className="flex items-center justify-center gap-3 mb-4">
               <Film className="w-8 h-8 text-amber-400" />
               <p className="text-3xl text-amber-400 tracking-[0.3em] uppercase font-semibold">
@@ -542,111 +848,60 @@ export default function EndCreditTheaterPage() {
             </p>
           </div>
 
-          {/* 2-Column Main Stage: Left = Photo Placeholder, Right = Names List (Single Column) */}
-          <div className="grid grid-cols-12 gap-10 items-stretch mb-40 text-left relative">
-            {/* Left Zone: Single Photo Placeholder Container that stretches with names */}
-            <div className="col-span-5 relative">
-              <div className="sticky top-40 w-full">
-                <div className="bg-neutral-900 border-4 border-amber-400 rounded-3xl p-5 shadow-2xl flex flex-col">
-                  <div className="w-full aspect-[3/4] bg-neutral-950 border-2 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center gap-5 text-amber-300">
-                    <div className="w-24 h-24 rounded-full bg-neutral-900 border-2 border-amber-400/60 flex items-center justify-center shadow-xl">
-                      <ImageIcon className="w-12 h-12 text-amber-400" />
-                    </div>
-                    <div className="text-center px-4">
-                      <p className="text-2xl font-black tracking-widest uppercase text-amber-300">PHOTO PLACEHOLDER</p>
-                      <p className="text-sm text-neutral-400 mt-2 font-mono tracking-wider">MEMORIES OF BYENIOR 2026</p>
-                    </div>
+          {/* Names Section: Right-aligned to leave space for photo overlay on left */}
+          <div ref={namesSectionRef} className="ml-auto text-left pr-16" style={{ width: '580px' }}>
+            {/* Part 1: Attendees */}
+            <div className="mb-36">
+              <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
+                <h2 className="text-4xl font-black tracking-[0.2em] text-amber-300 uppercase">
+                  ATTENDEES
+                </h2>
+                <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ผู้เข้าร่วมงาน BYENIOR 2026</p>
+              </div>
+              <div className="flex flex-col space-y-5 text-3xl text-slate-100 font-light">
+                {participants.length === 0 ? (
+                  <div className="text-slate-500 text-2xl py-6 italic">
+                    (ยังไม่มีรายชื่อผู้เช็คชื่อเข้าร่วมงาน)
                   </div>
-                  <div className="mt-4 flex items-center justify-between text-xs text-neutral-400 font-mono px-2">
-                    <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
-                      <Sparkles className="w-4 h-4" />
-                      <span>Sci-lywood Archives</span>
-                    </span>
-                    <span>ROLL #01</span>
-                  </div>
-                </div>
+                ) : (
+                  participants.map((p) => (
+                    <div key={p.id} className="tracking-wide py-1 border-b border-neutral-800/40">
+                      <span className="font-normal text-white">{p.fullName}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
-            {/* Right Zone: All Names (Single column list) */}
-            <div className="col-span-7 flex flex-col pl-6 text-left border-l-2 border-neutral-800/80">
-              {/* Part 1: Attendees (Single Column) */}
-              <div className="mb-36">
+            {/* Part 2: Staff & Organizers */}
+            {staffGroups.map((group) => (
+              <div key={group.category} className="mb-36">
                 <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
-                  <h2 className="text-4xl font-black tracking-[0.2em] text-amber-300 uppercase">
-                    ATTENDEES
+                  <h2 className="text-4xl font-black tracking-widest text-amber-400 uppercase">
+                    {group.label}
                   </h2>
-                  <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ผู้เข้าร่วมงาน BYENIOR 2026</p>
+                  <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ทีมงานและคณะผู้จัดทำ</p>
                 </div>
-
                 <div className="flex flex-col space-y-5 text-3xl text-slate-100 font-light">
-                  {participants.length === 0 ? (
-                    <div className="text-slate-500 text-2xl py-6 italic">
-                      (ยังไม่มีรายชื่อผู้เช็คชื่อเข้าร่วมงาน)
-                    </div>
+                  {group.members.length === 0 ? (
+                    <p className="text-slate-500 text-2xl italic">- ไม่พบรายชื่อ -</p>
                   ) : (
-                    participants.map((p) => (
-                      <div key={p.id} className="tracking-wide py-1 border-b border-neutral-800/40">
-                        <span className="font-normal text-white">{p.fullName}</span>
+                    group.members.map((m) => (
+                      <div key={m.id} className="tracking-wide py-1 border-b border-neutral-800/40">
+                        <span className="font-normal text-white">{m.fullName}</span>
                       </div>
                     ))
                   )}
                 </div>
               </div>
-
-              {/* Part 2: Staff & Organizers (Single Column) */}
-              {staffGroups.map((group) => (
-                <div key={group.category} className="mb-36">
-                  <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
-                    <h2 className="text-4xl font-black tracking-widest text-amber-400 uppercase">
-                      {group.label}
-                    </h2>
-                    <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ทีมงานและคณะผู้จัดทำ</p>
-                  </div>
-                  <div className="flex flex-col space-y-5 text-3xl text-slate-100 font-light">
-                    {group.members.length === 0 ? (
-                      <p className="text-slate-500 text-2xl italic">- ไม่พบรายชื่อ -</p>
-                    ) : (
-                      group.members.map((m) => (
-                        <div key={m.id} className="tracking-wide py-1 border-b border-neutral-800/40">
-                          <span className="font-normal text-white">{m.fullName}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
 
-          {/* Grand Transition: Centered Large Photo Expanded before THANK YOU */}
-          <div className="my-44 flex flex-col items-center justify-center animate-fade-in">
-            <div className="w-full max-w-4xl bg-neutral-900 border-4 border-amber-400 rounded-3xl p-6 shadow-2xl transition-all duration-700">
-              <div className="w-full h-[600px] bg-neutral-950 border-4 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center gap-6 text-amber-300">
-                <div className="w-32 h-32 rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl">
-                  <ImageIcon className="w-16 h-16 text-amber-400" />
-                </div>
-                <div className="text-center px-6">
-                  <p className="text-5xl font-black tracking-[0.25em] uppercase text-amber-300">
-                    FINAL MEMORIES PHOTO
-                  </p>
-                  <p className="text-xl text-neutral-400 mt-3 font-mono tracking-widest uppercase">
-                    FACULTY OF SCIENCE • CLASS OF 2026
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-between text-base text-amber-400/90 font-mono px-3">
-                <span className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
-                  <span>Sci-lywood Grand Finale Showcase</span>
-                </span>
-                <span className="font-bold">BYENIOR 2026 OFFICIAL</span>
-              </div>
-            </div>
-          </div>
+          {/* Spacer before THANK YOU (gives ample stage time for centered & expanded photo) */}
+          <div className="h-[1200px]" />
 
           {/* Final Ending Message */}
-          <div className="py-48 text-center">
+          <div ref={thankYouRef} className="py-48 text-center px-16">
             <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-2xl">
               <Star className="w-10 h-10 fill-amber-300 text-amber-300" />
             </div>
@@ -664,6 +919,69 @@ export default function EndCreditTheaterPage() {
             </div>
           </div>
         </div>
+
+        {/* Photo Overlay: Floats & Simulates CSS sticky on left, then transitions to center & expands */}
+        {photoLayout.opacity > 0 && photoLayout.y > -2000 && (
+          <div
+            ref={photoCardRef}
+            className="absolute pointer-events-none will-change-transform"
+            style={{
+              left: `${photoLayout.x}px`,
+              top: `${photoLayout.y}px`,
+              width: `${photoLayout.width}px`,
+              opacity: photoLayout.opacity,
+            }}
+          >
+            <div
+              className={`bg-neutral-900 border-4 border-amber-400 rounded-3xl shadow-2xl flex flex-col ${
+                photoLayout.isCentered ? 'p-8 ring-4 ring-amber-400/20' : 'p-5'
+              }`}
+            >
+              <div
+                className={`w-full aspect-[3/4] bg-neutral-950 border-2 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center text-amber-300 ${
+                  photoLayout.isCentered ? 'gap-8 p-6' : 'gap-5 p-3'
+                }`}
+              >
+                <div
+                  className={`rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl ${
+                    photoLayout.isCentered ? 'w-36 h-36 border-amber-300' : 'w-24 h-24 border-amber-400/60'
+                  }`}
+                >
+                  <ImageIcon className={`${photoLayout.isCentered ? 'w-20 h-20 text-amber-300' : 'w-12 h-12 text-amber-400'}`} />
+                </div>
+                <div className="text-center px-4">
+                  <p
+                    className={`font-black tracking-widest uppercase text-amber-300 ${
+                      photoLayout.isCentered ? 'text-4xl tracking-[0.2em]' : 'text-2xl'
+                    }`}
+                  >
+                    {photoLayout.isCentered ? 'FINAL MEMORIES PHOTO' : 'PHOTO PLACEHOLDER'}
+                  </p>
+                  <p
+                    className={`text-neutral-400 font-mono tracking-wider ${
+                      photoLayout.isCentered ? 'text-lg mt-3 uppercase' : 'text-sm mt-2'
+                    }`}
+                  >
+                    {photoLayout.isCentered
+                      ? 'FACULTY OF SCIENCE • CLASS OF 2026'
+                      : 'MEMORIES OF BYENIOR 2026'}
+                  </p>
+                </div>
+              </div>
+              <div
+                className={`mt-4 flex items-center justify-between text-neutral-400 font-mono px-2 ${
+                  photoLayout.isCentered ? 'text-sm' : 'text-xs'
+                }`}
+              >
+                <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
+                  <Sparkles className={`${photoLayout.isCentered ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                  <span>{photoLayout.isCentered ? 'Grand Finale Showcase' : 'Sci-lywood Archives'}</span>
+                </span>
+                <span>{photoLayout.isCentered ? 'BYENIOR 2026' : 'ROLL #01'}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
