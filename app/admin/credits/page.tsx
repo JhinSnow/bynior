@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Maximize2, Minimize2, Play, Pause, RotateCcw, Volume2, ArrowLeft, Star, Film, Bug, FastForward, Gauge } from 'lucide-react';
+import { Maximize2, Minimize2, Play, Pause, RotateCcw, Volume2, ArrowLeft, Star, Film, Bug, FastForward, Gauge, Image as ImageIcon, Sparkles, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 declare global {
@@ -39,6 +39,7 @@ export default function EndCreditTheaterPage() {
 
   // Theater state
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -165,8 +166,8 @@ export default function EndCreditTheaterPage() {
     };
   }, []);
 
-  // Fullscreen toggle with cross-browser and mobile Safari support
-  const toggleFullscreen = async () => {
+  // Fullscreen toggle with reliable documentElement target
+  const toggleFullscreen = () => {
     try {
       const isCurrentlyFullscreen = !!(
         document.fullscreenElement ||
@@ -176,25 +177,25 @@ export default function EndCreditTheaterPage() {
       );
 
       if (!isCurrentlyFullscreen) {
-        const elem = containerRef.current || document.documentElement;
+        const elem = document.documentElement;
         if (elem.requestFullscreen) {
-          await elem.requestFullscreen();
+          elem.requestFullscreen().catch(() => {});
         } else if ((elem as any).webkitRequestFullscreen) {
-          await (elem as any).webkitRequestFullscreen();
+          (elem as any).webkitRequestFullscreen();
         } else if ((elem as any).mozRequestFullScreen) {
-          await (elem as any).mozRequestFullScreen();
+          (elem as any).mozRequestFullScreen();
         } else if ((elem as any).msRequestFullscreen) {
-          await (elem as any).msRequestFullscreen();
+          (elem as any).msRequestFullscreen();
         }
       } else {
         if (document.exitFullscreen) {
-          await document.exitFullscreen();
+          document.exitFullscreen().catch(() => {});
         } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen();
+          (document as any).webkitExitFullscreen();
         } else if ((document as any).mozCancelFullScreen) {
-          await (document as any).mozCancelFullScreen();
+          (document as any).mozCancelFullScreen();
         } else if ((document as any).msExitFullscreen) {
-          await (document as any).msExitFullscreen();
+          (document as any).msExitFullscreen();
         }
       }
     } catch (err) {
@@ -211,29 +212,44 @@ export default function EndCreditTheaterPage() {
   // Start Playback
   const handleStartPlay = () => {
     setIsPlaying(true);
+    setIsPaused(false);
     setIsCompleted(false);
     setControlsVisible(false);
     lastTimestampRef.current = null;
 
     // เล่นเพลงที่ 1
     setCurrentSongIndex(1);
-    player1Ref.current?.playVideo();
+    try {
+      player1Ref.current?.playVideo();
+    } catch {}
   };
 
   // Toggle Pause (Debug mode)
   const handleTogglePause = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-      player1Ref.current?.pauseVideo();
-      player2Ref.current?.pauseVideo();
+    if (!isPlaying) {
+      // If stopped from initial screen, start play
+      handleStartPlay();
+      return;
+    }
+
+    if (!isPaused) {
+      // Pause
+      setIsPaused(true);
+      try {
+        player1Ref.current?.pauseVideo();
+        player2Ref.current?.pauseVideo();
+      } catch {}
     } else {
-      setIsPlaying(true);
+      // Resume
+      setIsPaused(false);
       lastTimestampRef.current = null;
-      if (currentSongIndex === 1) {
-        player1Ref.current?.playVideo();
-      } else {
-        player2Ref.current?.playVideo();
-      }
+      try {
+        if (currentSongIndex === 1) {
+          player1Ref.current?.playVideo();
+        } else {
+          player2Ref.current?.playVideo();
+        }
+      } catch {}
     }
   };
 
@@ -255,21 +271,24 @@ export default function EndCreditTheaterPage() {
   const handleReset = () => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     setIsPlaying(false);
+    setIsPaused(false);
     setIsCompleted(false);
     setOffsetY(1920);
     virtualElapsedRef.current = 0;
     setProgressPercent(0);
     lastTimestampRef.current = null;
-    player1Ref.current?.stopVideo();
-    player2Ref.current?.stopVideo();
-    player1Ref.current?.seekTo(0);
-    player2Ref.current?.seekTo(0);
+    try {
+      player1Ref.current?.stopVideo();
+      player2Ref.current?.stopVideo();
+      player1Ref.current?.seekTo(0);
+      player2Ref.current?.seekTo(0);
+    } catch {}
     setControlsVisible(true);
   };
 
-  // Scroll Animation loop with speed multiplier
+  // Scroll Animation loop with speed multiplier and pause check
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || isPaused) return;
 
     const animate = (timestamp: number) => {
       if (lastTimestampRef.current === null) {
@@ -284,7 +303,7 @@ export default function EndCreditTheaterPage() {
 
       if (contentRef.current) {
         const contentHeight = contentRef.current.offsetHeight;
-        // ปลายทาง: รายชื่อคนสุดท้ายของสโมสรเลื่อนขึ้นมาถึงกึ่งกลางหน้าจอพอดี
+        // ปลายทาง: ให้ข้อความช่วงท้ายเลื่อนมาจบอย่างสวยงาม
         const totalDistance = 1920 + contentHeight - 960;
         const progress = Math.min(elapsed / totalDuration, 1);
         setProgressPercent(progress * 100);
@@ -295,6 +314,7 @@ export default function EndCreditTheaterPage() {
         if (progress >= 1) {
           setIsCompleted(true);
           setIsPlaying(false);
+          setIsPaused(false);
           return;
         }
       }
@@ -306,7 +326,7 @@ export default function EndCreditTheaterPage() {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isPlaying, totalDuration]);
+  }, [isPlaying, isPaused, totalDuration]);
 
   // ซ่อน/แสดง Controls เมื่อเมาส์ขยับ
   useEffect(() => {
@@ -415,8 +435,8 @@ export default function EndCreditTheaterPage() {
               onClick={handleTogglePause}
               className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black text-xs flex items-center gap-1.5 transition-all active:scale-95"
             >
-              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-black" /> : <Play className="w-3.5 h-3.5 fill-black" />}
-              <span>{isPlaying ? 'หยุดชั่วคราว (Pause)' : 'เล่นต่อ (Play)'}</span>
+              {isPlaying && !isPaused ? <Pause className="w-3.5 h-3.5 fill-black" /> : <Play className="w-3.5 h-3.5 fill-black" />}
+              <span>{isPlaying && !isPaused ? 'หยุดชั่วคราว (Pause)' : 'เล่นต่อ (Play)'}</span>
             </button>
 
             {/* Speed Multipliers */}
@@ -506,10 +526,14 @@ export default function EndCreditTheaterPage() {
           style={{ transform: `translate3d(0, ${offsetY}px, 0)` }}
         >
           {/* Header */}
-          <div className="mb-48">
-            <p className="text-3xl text-amber-400 tracking-[0.3em] uppercase mb-4 font-semibold">
-              Faculty of Science • Byenior Celebration
-            </p>
+          <div className="mb-32">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Film className="w-8 h-8 text-amber-400" />
+              <p className="text-3xl text-amber-400 tracking-[0.3em] uppercase font-semibold">
+                Faculty of Science • Sci-lywood Celebration
+              </p>
+              <Film className="w-8 h-8 text-amber-400" />
+            </div>
             <h1 className="text-8xl font-black tracking-widest text-white mb-6">
               BYENIOR 2026
             </h1>
@@ -518,55 +542,156 @@ export default function EndCreditTheaterPage() {
             </p>
           </div>
 
-          {/* Part 1: Attendees (ผู้เข้าร่วมงานที่ Checked-in แสดงเฉพาะชื่อ-นามสกุล) */}
-          <div className="mb-56">
-            <h2 className="text-5xl font-bold tracking-[0.2em] text-amber-300 border-b-2 border-amber-500/40 pb-6 inline-block mb-20 uppercase">
-              ATTENDEES
-            </h2>
-
-            <div className="grid grid-cols-2 gap-y-7 gap-x-12 text-3xl text-slate-100 font-light max-w-4xl mx-auto">
-              {participants.length === 0 ? (
-                <div className="col-span-2 text-slate-500 text-2xl py-6">
-                  (ยังไม่มีรายชื่อผู้เช็คชื่อเข้าร่วมงาน)
-                </div>
-              ) : (
-                participants.map((p) => (
-                  <div key={p.id} className="text-center tracking-wide py-1">
-                    <span className="font-normal text-white">{p.fullName}</span>
+          {/* 2-Column Main Stage: Left = Photo Placeholder Stack, Right = Names List */}
+          <div className="grid grid-cols-12 gap-8 items-start mb-40 text-left">
+            {/* Left Zone: Photo Placeholders (เลื่อนไปพร้อมรายชื่อ) */}
+            <div className="col-span-5 flex flex-col gap-16 sticky top-20">
+              {/* Photo Card 1 */}
+              <div className="bg-neutral-900 border-4 border-amber-400/80 rounded-2xl p-4 shadow-2xl flex flex-col">
+                <div className="w-full aspect-[4/3] bg-neutral-950 border-2 border-dashed border-amber-500/40 rounded-xl flex flex-col items-center justify-center gap-4 text-amber-300/80 group">
+                  <div className="w-20 h-20 rounded-full bg-neutral-900 border border-amber-400/50 flex items-center justify-center shadow-lg">
+                    <ImageIcon className="w-10 h-10 text-amber-400" />
                   </div>
-                ))
-              )}
+                  <div className="text-center px-4">
+                    <p className="text-xl font-bold tracking-widest uppercase text-amber-300">PHOTO PLACEHOLDER</p>
+                    <p className="text-sm text-neutral-400 mt-1 font-mono tracking-wide">MEMORIES OF BYENIOR 2026</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400 font-mono px-1">
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Sci-lywood Archives</span>
+                  </span>
+                  <span>ROLL #01</span>
+                </div>
+              </div>
+
+              {/* Photo Card 2 */}
+              <div className="bg-neutral-900 border-4 border-red-700/80 rounded-2xl p-4 shadow-2xl flex flex-col">
+                <div className="w-full aspect-[4/3] bg-neutral-950 border-2 border-dashed border-red-500/40 rounded-xl flex flex-col items-center justify-center gap-4 text-red-300/80">
+                  <div className="w-20 h-20 rounded-full bg-neutral-900 border border-red-500/50 flex items-center justify-center shadow-lg">
+                    <Heart className="w-10 h-10 text-red-400" />
+                  </div>
+                  <div className="text-center px-4">
+                    <p className="text-xl font-bold tracking-widest uppercase text-red-300">FRIENDSHIP & MEMORIES</p>
+                    <p className="text-sm text-neutral-400 mt-1 font-mono tracking-wide">CLASS OF 2026</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400 font-mono px-1">
+                  <span className="flex items-center gap-1.5 text-red-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Special Moments</span>
+                  </span>
+                  <span>ROLL #02</span>
+                </div>
+              </div>
+
+              {/* Photo Card 3 */}
+              <div className="bg-neutral-900 border-4 border-amber-400/80 rounded-2xl p-4 shadow-2xl flex flex-col">
+                <div className="w-full aspect-[4/3] bg-neutral-950 border-2 border-dashed border-amber-500/40 rounded-xl flex flex-col items-center justify-center gap-4 text-amber-300/80">
+                  <div className="w-20 h-20 rounded-full bg-neutral-900 border border-amber-400/50 flex items-center justify-center shadow-lg">
+                    <Film className="w-10 h-10 text-amber-400" />
+                  </div>
+                  <div className="text-center px-4">
+                    <p className="text-xl font-bold tracking-widest uppercase text-amber-300">FACULTY OF SCIENCE</p>
+                    <p className="text-sm text-neutral-400 mt-1 font-mono tracking-wide">JOURNEY TOGETHER</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-neutral-400 font-mono px-1">
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Sci-lywood Highlights</span>
+                  </span>
+                  <span>ROLL #03</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Zone: All Names (Attendees + Staff & Organizers) */}
+            <div className="col-span-7 flex flex-col pl-4 text-left">
+              {/* Part 1: Attendees */}
+              <div className="mb-32">
+                <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
+                  <h2 className="text-4xl font-bold tracking-[0.2em] text-amber-300 uppercase">
+                    ATTENDEES
+                  </h2>
+                  <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ผู้เข้าร่วมงาน BYENIOR 2026</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-y-5 gap-x-6 text-2xl text-slate-100 font-light">
+                  {participants.length === 0 ? (
+                    <div className="col-span-2 text-slate-500 text-xl py-6 italic">
+                      (ยังไม่มีรายชื่อผู้เช็คชื่อเข้าร่วมงาน)
+                    </div>
+                  ) : (
+                    participants.map((p) => (
+                      <div key={p.id} className="tracking-wide py-0.5 border-b border-neutral-800/40">
+                        <span className="font-normal text-white">{p.fullName}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Part 2: Staff & Organizers */}
+              {staffGroups.map((group) => (
+                <div key={group.category} className="mb-32">
+                  <div className="border-b-2 border-amber-400/60 pb-4 mb-10">
+                    <h2 className="text-4xl font-black tracking-widest text-amber-400 uppercase">
+                      {group.label}
+                    </h2>
+                    <p className="text-sm text-neutral-400 tracking-wider font-mono mt-1">ทีมงานและคณะผู้จัดทำ</p>
+                  </div>
+                  <div
+                    className={`${
+                      group.members.length > 20
+                        ? 'grid grid-cols-2 gap-y-5 gap-x-6'
+                        : 'space-y-5'
+                    } text-2xl text-slate-100 font-light`}
+                  >
+                    {group.members.length === 0 ? (
+                      <p className="col-span-2 text-slate-500 text-xl italic">- ไม่พบรายชื่อ -</p>
+                    ) : (
+                      group.members.map((m) => (
+                        <p key={m.id} className="tracking-wide font-normal text-white py-0.5 border-b border-neutral-800/40">
+                          {m.fullName}
+                        </p>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Part 2: Staff & Organizers (ผู้ร่วมจัด, ชุมนุม, สโมสร) */}
-          {staffGroups.map((group) => (
-            <div key={group.category} className="mb-56">
-              <h2 className="text-5xl font-black tracking-widest text-amber-400 mb-14 uppercase">
-                {group.label}
-              </h2>
-              <div
-                className={`${
-                  group.members.length > 25
-                    ? 'grid grid-cols-2 gap-y-7 gap-x-12 max-w-4xl mx-auto'
-                    : 'space-y-7'
-                } text-3xl text-slate-100 font-light`}
-              >
-                {group.members.length === 0 ? (
-                  <p className="col-span-2 text-slate-500 text-2xl italic">- ไม่พบรายชื่อ -</p>
-                ) : (
-                  group.members.map((m) => (
-                    <p key={m.id} className="tracking-wide font-normal text-white py-1">
-                      {m.fullName}
-                    </p>
-                  ))
-                )}
+          {/* Grand Transition: Centered Hero Photo Expanded to Large Size before THANK YOU */}
+          <div className="my-36 flex flex-col items-center justify-center">
+            <div className="w-full max-w-4xl bg-neutral-900 border-4 border-amber-400 rounded-3xl p-6 shadow-2xl">
+              <div className="w-full h-[520px] bg-neutral-950 border-4 border-dashed border-amber-500/50 rounded-2xl flex flex-col items-center justify-center gap-6 text-amber-300">
+                <div className="w-28 h-28 rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl">
+                  <ImageIcon className="w-14 h-14 text-amber-400" />
+                </div>
+                <div className="text-center px-6">
+                  <p className="text-4xl font-black tracking-[0.25em] uppercase text-amber-300">
+                    FINAL MEMORIES PHOTO
+                  </p>
+                  <p className="text-lg text-neutral-400 mt-2 font-mono tracking-widest uppercase">
+                    FACULTY OF SCIENCE • CLASS OF 2026
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm text-amber-400/80 font-mono px-3">
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Sci-lywood Grand Finale Showcase</span>
+                </span>
+                <span className="font-bold">BYENIOR 2026 OFFICIAL</span>
               </div>
             </div>
-          ))}
+          </div>
 
           {/* Final Ending Message */}
-          <div className="py-72 text-center">
+          <div className="py-48 text-center">
             <div className="w-20 h-20 mx-auto mb-8 rounded-full bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-2xl">
               <Star className="w-10 h-10 fill-amber-300 text-amber-300" />
             </div>
