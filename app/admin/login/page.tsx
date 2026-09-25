@@ -40,6 +40,17 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-between p-4 sm:p-6 relative select-none">
+      {/* Top Bar with Back Button */}
+      <header className="w-full max-w-md mx-auto pt-2 z-10 flex items-center justify-between">
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-amber-300 hover:border-amber-500/50 transition-all text-xs font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>ย้อนกลับหน้าลงทะเบียน</span>
+        </Link>
+      </header>
+
       <div className="w-full max-w-md mx-auto my-auto py-8 z-10">
         <div className="bg-neutral-950 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative">
           <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-red-700 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-md">
