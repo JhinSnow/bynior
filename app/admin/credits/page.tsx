@@ -304,10 +304,10 @@ export default function EndCreditTheaterPage() {
     const stickyScreenY = Math.round((1920 - STICKY_CARD_HEIGHT) / 2); // 650px (Dead Center vertically)
     const leftX = 40;
 
-    const targetWidth = 840; // enlarged width
-    const targetHeight = 1120; // 3:4 enlarged height
-    const centerX = (1080 - targetWidth) / 2; // 120px
-    const centerY = (1920 - targetHeight) / 2 - 40; // ~360px centered
+    const targetWidth = 620; // scaled down to fit comfortably in theater screen
+    const targetHeight = Math.round((620 * 4) / 3); // 827px (3:4 ratio)
+    const centerX = (1080 - targetWidth) / 2; // 230px (Dead Center horizontally)
+    const centerY = (1920 - targetHeight) / 2 - 20; // Dead Center vertically with slight aesthetic lift
 
     const namesVisualTop = currentY + namesTop;
     const namesVisualBottom = currentY + namesTop + namesHeight;
