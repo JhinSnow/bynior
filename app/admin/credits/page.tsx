@@ -89,9 +89,11 @@ export default function EndCreditTheaterPage() {
 
   // Single YouTube Player Architecture (guarantees seamless transition without browser multi-iframe restrictions)
   const playerRef = useRef<any>(null);
-  const [totalDuration, setTotalDuration] = useState<number>(444);
+  // เพลง 1 (240s) + เพลง 2 (145s) = 385s (ค่า default ที่แม่นยำ ป้องกันการข้ามชื่อหรือกระตุกตอนสลับเพลง)
+  const [totalDuration, setTotalDuration] = useState<number>(385);
+  const totalDurationRef = useRef<number>(385);
   const duration1Ref = useRef<number>(240);
-  const duration2Ref = useRef<number>(204);
+  const duration2Ref = useRef<number>(145);
 
   // Fetch attendees and credits from Database
   useEffect(() => {
@@ -232,7 +234,10 @@ export default function EndCreditTheaterPage() {
 
   const updateTotalDuration = () => {
     const total = duration1Ref.current + duration2Ref.current;
-    if (total > 0) setTotalDuration(total);
+    if (total > 0) {
+      totalDurationRef.current = total;
+      setTotalDuration(total);
+    }
   };
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -452,7 +457,7 @@ export default function EndCreditTheaterPage() {
   // Jump to specific percentage (0 to 100)
   const handleSeek = (percent: number) => {
     const fraction = Math.max(0, Math.min(1, percent / 100));
-    const scrollTargetDuration = Math.max(60, totalDuration - 12);
+    const scrollTargetDuration = Math.max(60, totalDurationRef.current - 12);
     virtualElapsedRef.current = fraction * scrollTargetDuration;
     setProgressPercent(fraction * 100);
     progressRef.current = fraction;
@@ -513,6 +518,7 @@ export default function EndCreditTheaterPage() {
       // เพิ่มเวลาตาม speed multiplier
       virtualElapsedRef.current += deltaSec * speedRef.current;
       const elapsed = virtualElapsedRef.current;
+      const curTotalDuration = totalDurationRef.current;
 
       if (contentRef.current) {
         const thankYouTop = thankYouRef.current ? thankYouRef.current.offsetTop : contentRef.current.offsetHeight - 400;
@@ -522,7 +528,7 @@ export default function EndCreditTheaterPage() {
         const totalDistance = 960 + thankYouCenter;
 
         // สิ้นสุดการเลื่อนก่อนเพลงจบ 12 วินาที เพื่อให้จอค้างที่หน้า THANK YOU พร้อมเสียงดนตรีช่วงท้าย
-        const scrollTargetDuration = Math.max(60, totalDuration - 12);
+        const scrollTargetDuration = Math.max(60, curTotalDuration - 12);
         const progress = Math.min(elapsed / scrollTargetDuration, 1);
         progressRef.current = progress;
         setProgressPercent(progress * 100);
@@ -534,7 +540,7 @@ export default function EndCreditTheaterPage() {
         if (progress >= 1) {
           // ถึงหน้า THANK YOU แล้ว จอดค้างตรงกลาง
           // ถ้าเล่นจนครบเวลาเพลงทั้งหมดแล้ว หรือเพลงที่ 2 จบแล้ว ให้จบสมบูรณ์
-          if (elapsed >= totalDuration || (currentSongIndexRef.current === 2 && song2Status === 'Ended')) {
+          if (elapsed >= curTotalDuration) {
             setIsCompleted(true);
             setIsPlaying(false);
             setIsPaused(false);
@@ -550,7 +556,7 @@ export default function EndCreditTheaterPage() {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [isPlaying, isPaused, totalDuration, song2Status]);
+  }, [isPlaying, isPaused]);
 
   // ซ่อน/แสดง Controls เมื่อเมาส์ขยับ
   useEffect(() => {
