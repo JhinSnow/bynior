@@ -128,7 +128,14 @@ export default function EndCreditTheaterPage() {
     try {
       playerRef.current = new window.YT.Player('yt-player-unified', {
         videoId: SONG_1_ID,
-        playerVars: { controls: 0, disablekb: 1, rel: 0, enablejsapi: 1 },
+        playerVars: { 
+          controls: 0, 
+          disablekb: 1, 
+          rel: 0, 
+          enablejsapi: 1,
+          playsinline: 1,
+          autoplay: 0,
+        },
         events: {
           onReady: (event: any) => {
             setSong1Status('Ready');
@@ -186,16 +193,14 @@ export default function EndCreditTheaterPage() {
                   setAudioError(`Song 2 load failed: ${e.message}`);
                 }
               } else {
-                // Song 2 ended -> finish audio, DO NOT REPEAT
+                // Song 2 ended -> finish audio, complete credits smoothly
                 setSong2Status('Ended');
                 try {
                   playerRef.current?.stopVideo();
                 } catch {}
-                // If scroll has reached THANK YOU (>= 98%), complete
-                if (progressRef.current >= 0.98) {
-                  setIsCompleted(true);
-                  setIsPlaying(false);
-                }
+                setIsCompleted(true);
+                setIsPlaying(false);
+                setIsPaused(false);
               }
             }
           },
@@ -504,7 +509,7 @@ export default function EndCreditTheaterPage() {
     });
   };
 
-  // Scroll Animation loop with speed multiplier and pause check
+  // Scroll Animation loop with real audio sync, speed multiplier and pause check
   useEffect(() => {
     if (!isPlaying || isPaused) return;
 
@@ -515,8 +520,49 @@ export default function EndCreditTheaterPage() {
       const deltaSec = (timestamp - lastTimestampRef.current) / 1000;
       lastTimestampRef.current = timestamp;
 
-      // เพิ่มเวลาตาม speed multiplier
-      virtualElapsedRef.current += deltaSec * speedRef.current;
+      // ตรวจสอบสถานะและตำแหน่งเวลาจริงของ YouTube Player (ถ้ามี)
+      let playerState = -1;
+      let realAudioTime: number | null = null;
+      try {
+        if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
+          playerState = playerRef.current.getPlayerState();
+        }
+        if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+          const ct = playerRef.current.getCurrentTime();
+          if (typeof ct === 'number' && !isNaN(ct) && ct >= 0) {
+            if (currentSongIndexRef.current === 1) {
+              realAudioTime = ct;
+            } else {
+              realAudioTime = duration1Ref.current + ct;
+            }
+          }
+        }
+      } catch {}
+
+      // ถ้าเล่นที่สปีดปกติ 1x และกำลังเชื่อมต่อกับ YouTube
+      if (speedRef.current === 1 && playerState !== -1) {
+        if (playerState === 3) {
+          // กำลังบัฟเฟอร์ (Buffering): ให้หยุดการเลื่อน End Credit ชั่วคราวเพื่อรอเสียงเพลง
+          // ไม่เพิ่มเวลา virtualElapsedRef
+        } else if (playerState === 1 && realAudioTime !== null) {
+          // กำลังเล่นเพลง (Playing): ซิงค์ virtualElapsed เข้าหา realAudioTime อย่างนุ่มนวล
+          const drift = realAudioTime - virtualElapsedRef.current;
+          if (Math.abs(drift) > 3) {
+            // หากเวลาต่างกันมากเกิน 3 วิ (เช่น หลังจากสลับเพลงหรือ seek) ให้กระโดดตามเพลง
+            virtualElapsedRef.current = realAudioTime;
+          } else {
+            // ดึงเข้าหาเวลาจริงทีละนิดอย่างนุ่มนวล (lerp) ร่วมกับการเดินหน้าปกติ
+            virtualElapsedRef.current += deltaSec + drift * 0.08;
+          }
+        } else {
+          // สถานะอื่นๆ เดินหน้าตาม delta ปกติ
+          virtualElapsedRef.current += deltaSec * speedRef.current;
+        }
+      } else {
+        // เมื่ออยู่ใน Debug Mode หรือปรับ Speed เร่งความเร็ว
+        virtualElapsedRef.current += deltaSec * speedRef.current;
+      }
+
       const elapsed = virtualElapsedRef.current;
       const curTotalDuration = totalDurationRef.current;
 
@@ -527,8 +573,8 @@ export default function EndCreditTheaterPage() {
         // ปลายทาง: ให้ข้อความ THANK YOU เลื่อนมาหยุดที่กึ่งกลางจอ (Y = 960) พอดีเป๊ะ
         const totalDistance = 960 + thankYouCenter;
 
-        // สิ้นสุดการเลื่อนก่อนเพลงจบ 12 วินาที เพื่อให้จอค้างที่หน้า THANK YOU พร้อมเสียงดนตรีช่วงท้าย
-        const scrollTargetDuration = Math.max(60, curTotalDuration - 12);
+        // สิ้นสุดการเลื่อนก่อนเพลงจบ 10 วินาที เพื่อให้จอค้างที่หน้า THANK YOU พร้อมเสียงดนตรีช่วงท้าย
+        const scrollTargetDuration = Math.max(60, curTotalDuration - 10);
         const progress = Math.min(elapsed / scrollTargetDuration, 1);
         progressRef.current = progress;
         setProgressPercent(progress * 100);
@@ -586,8 +632,11 @@ export default function EndCreditTheaterPage() {
       ref={containerRef}
       className="w-screen h-screen bg-black flex items-center justify-center overflow-hidden select-none relative font-luxurious"
     >
-      {/* Single YouTube Audio Player (off-screen so browser plays without throttling) */}
-      <div className="absolute -left-[9999px] -top-[9999px] w-[200px] h-[200px] opacity-0 pointer-events-none">
+      {/* Single YouTube Audio Player (Kept as an active 200x200 media frame tucked into bottom corner so browser never throttles/suspends audio) */}
+      <div 
+        className="fixed bottom-0 right-0 w-[200px] h-[200px] pointer-events-none z-0 overflow-hidden" 
+        style={{ opacity: 0.03 }}
+      >
         <div id="yt-player-unified" />
       </div>
 
