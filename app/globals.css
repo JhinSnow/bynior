@@ -18,9 +18,17 @@ body {
 }
 
 /* ฟอนต์ FC Luxurious สำหรับหน้าจอ End Credit โดยเฉพาะ */
+@font-face {
+  font-family: 'FCLuxurious';
+  src: url('/fonts/fc-luxurious.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 .font-luxurious,
 .font-luxurious * {
-  font-family: var(--font-fc-luxurious), 'FCLuxurious', serif !important;
+  font-family: 'FCLuxurious', var(--font-fc-luxurious), 'Noto Serif Thai', serif !important;
 }
 
 @keyframes shake {
