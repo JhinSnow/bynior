@@ -304,13 +304,17 @@ export default function EndCreditTheaterPage() {
     const stickyScreenY = Math.round((1920 - STICKY_CARD_HEIGHT) / 2); // 650px (Dead Center vertically)
     const leftX = 40;
 
-    const targetWidth = 620; // scaled down to fit comfortably in theater screen
-    const targetHeight = Math.round((620 * 4) / 3); // 827px (3:4 ratio)
-    const centerX = (1080 - targetWidth) / 2; // 230px (Dead Center horizontally)
-    const centerY = (1920 - targetHeight) / 2 - 20; // Dead Center vertically with slight aesthetic lift
+    const targetWidth = 500; // compact and elegant size
+    const targetHeight = Math.round((500 * 4) / 3); // 667px (3:4 ratio)
+    const centerX = (1080 - targetWidth) / 2; // 290px (Dead Center horizontally)
+    const centerY = (1920 - targetHeight) / 2 - 20; // 606px (Dead Center vertically)
 
     const namesVisualTop = currentY + namesTop;
     const namesVisualBottom = currentY + namesTop + namesHeight;
+
+    // Names have completely scrolled off screen when namesVisualBottom <= 0
+    // We add a safety clearance margin of 80px so the last name is 100% gone
+    const NAMES_EXIT_POINT = 0; 
 
     if (namesVisualTop > stickyScreenY) {
       // 1. Before names reach center sticky point -> scrolls in naturally with content
@@ -321,8 +325,8 @@ export default function EndCreditTheaterPage() {
         opacity: 1,
         isCentered: false,
       });
-    } else if (namesVisualBottom > stickyScreenY + STICKY_CARD_HEIGHT) {
-      // 2. Names are scrolling through -> photo stays pinned at dynamic vertical center
+    } else if (namesVisualBottom > NAMES_EXIT_POINT) {
+      // 2. Names are scrolling through or still visible on screen -> photo stays pinned at left sticky position
       setPhotoLayout({
         x: leftX,
         y: stickyScreenY,
@@ -331,10 +335,10 @@ export default function EndCreditTheaterPage() {
         isCentered: false,
       });
     } else {
-      // 3. Names ended -> transition smoothly to center & expand!
-      const distancePast = (stickyScreenY + STICKY_CARD_HEIGHT) - namesVisualBottom;
+      // 3. Names have COMPLETELY cleared off the top of the screen -> glide smoothly to center & expand!
+      const distancePast = NAMES_EXIT_POINT - namesVisualBottom;
 
-      const MOVE_DURATION = 650; // Pixels to glide from left to center & expand
+      const MOVE_DURATION = 600; // Pixels to glide gracefully from left to center & expand
       const HOLD_DURATION = 550; // Pixels to hold majestically in center spotlight
       const FADE_DURATION = 350; // Pixels to dissolve smoothly into black
 
