@@ -304,17 +304,17 @@ export default function EndCreditTheaterPage() {
     const stickyScreenY = Math.round((1920 - STICKY_CARD_HEIGHT) / 2); // 650px (Dead Center vertically)
     const leftX = 40;
 
-    const targetWidth = 500; // compact and elegant size
-    const targetHeight = Math.round((500 * 4) / 3); // 667px (3:4 ratio)
-    const centerX = (1080 - targetWidth) / 2; // 290px (Dead Center horizontally)
-    const centerY = (1920 - targetHeight) / 2 - 20; // 606px (Dead Center vertically)
+    const targetWidth = 420; // compact and balanced size
+    const targetHeight = Math.round((420 * 4) / 3); // 560px (3:4 ratio)
+    const centerX = (1080 - targetWidth) / 2; // 330px (Dead Center horizontally)
+    const centerY = (1920 - targetHeight) / 2; // 680px (Dead Center vertically)
 
     const namesVisualTop = currentY + namesTop;
     const namesVisualBottom = currentY + namesTop + namesHeight;
 
-    // Names have completely scrolled off screen when namesVisualBottom <= 0
-    // We add a safety clearance margin of 80px so the last name is 100% gone
-    const NAMES_EXIT_POINT = 0; 
+    // Trigger right when the last name passes the sticky card center position
+    // (no long delay or waiting for names to clear all the way to screen top)
+    const TRIGGER_EXIT_POINT = stickyScreenY + 120;
 
     if (namesVisualTop > stickyScreenY) {
       // 1. Before names reach center sticky point -> scrolls in naturally with content
@@ -325,8 +325,8 @@ export default function EndCreditTheaterPage() {
         opacity: 1,
         isCentered: false,
       });
-    } else if (namesVisualBottom > NAMES_EXIT_POINT) {
-      // 2. Names are scrolling through or still visible on screen -> photo stays pinned at left sticky position
+    } else if (namesVisualBottom > TRIGGER_EXIT_POINT) {
+      // 2. Names are scrolling through -> photo stays pinned on the left
       setPhotoLayout({
         x: leftX,
         y: stickyScreenY,
@@ -335,15 +335,15 @@ export default function EndCreditTheaterPage() {
         isCentered: false,
       });
     } else {
-      // 3. Names have COMPLETELY cleared off the top of the screen -> glide smoothly to center & expand!
-      const distancePast = NAMES_EXIT_POINT - namesVisualBottom;
+      // 3. Last name has just passed sticky card -> smoothly glide to center, hold, then fade out cleanly
+      const distancePast = TRIGGER_EXIT_POINT - namesVisualBottom;
 
-      const MOVE_DURATION = 600; // Pixels to glide gracefully from left to center & expand
-      const HOLD_DURATION = 550; // Pixels to hold majestically in center spotlight
-      const FADE_DURATION = 350; // Pixels to dissolve smoothly into black
+      const MOVE_DURATION = 350; // Glide smoothly to center and scale gently
+      const HOLD_DURATION = 400; // Hold in center spotlight
+      const FADE_DURATION = 250; // Fade out completely before THANK YOU section arrives
 
       if (distancePast < MOVE_DURATION) {
-        // Moving from left to center and expanding smoothly
+        // Moving from left to center and transitioning smoothly
         const t = Math.min(1, Math.max(0, distancePast / MOVE_DURATION));
         const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
@@ -359,7 +359,7 @@ export default function EndCreditTheaterPage() {
           isCentered: ease > 0.4,
         });
       } else if (distancePast < MOVE_DURATION + HOLD_DURATION) {
-        // Spotlight hold in dead center
+        // Spotlight hold in center
         setPhotoLayout({
           x: centerX,
           y: centerY,
@@ -368,7 +368,7 @@ export default function EndCreditTheaterPage() {
           isCentered: true,
         });
       } else if (distancePast < MOVE_DURATION + HOLD_DURATION + FADE_DURATION) {
-        // Dissolving smoothly in place without moving or jumping
+        // Smoothly dissolve out to 0 opacity BEFORE THANK YOU appears
         const fadeT = (distancePast - MOVE_DURATION - HOLD_DURATION) / FADE_DURATION;
         setPhotoLayout({
           x: centerX,
@@ -378,7 +378,7 @@ export default function EndCreditTheaterPage() {
           isCentered: true,
         });
       } else {
-        // Fully dissolved and hidden offscreen
+        // 100% gone
         setPhotoLayout({
           x: centerX,
           y: -9999,
