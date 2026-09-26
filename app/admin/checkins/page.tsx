@@ -12,7 +12,8 @@ import {
   UserX,
   Ticket,
   Filter,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 
 interface Attendee {
@@ -59,6 +60,28 @@ export default function AdminCheckinsPage() {
   const handleRefresh = () => {
     setRefreshing(true);
     fetchCheckins();
+  };
+
+  const handleResetAllCheckins = async () => {
+    if (!confirm('⚠️ ยืนยันการล้างประวัติการลงทะเบียนทั้งหมดหรือไม่?\n\nการกระทำนี้จะ:\n- รีเซ็ตสถานะทุกคนเป็นยังไม่ลงทะเบียน\n- ล้างประวัติการรับรางวัล Lucky Draw\n- รีเซ็ตสิทธิ์คูปองอาหารทั้งหมด')) {
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      const res = await fetch('/api/admin/checkins', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'ล้างประวัติเรียบร้อยแล้ว');
+        fetchCheckins();
+      } else {
+        alert(data.error || 'เกิดข้อผิดพลาดในการล้างข้อมูล');
+      }
+    } catch {
+      alert('เครือข่ายขัดข้อง');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   // กรองข้อมูลตามการค้นหาและสถานะ
@@ -179,15 +202,27 @@ export default function AdminCheckinsPage() {
               </button>
             </div>
 
-            <button
-              onClick={handleRefresh}
-              className={`p-2.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-white transition-all shrink-0 ${
-                refreshing ? 'animate-spin text-amber-400' : ''
-              }`}
-              title="รีเฟรชข้อมูล"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={handleRefresh}
+                className={`p-2.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-amber-300 hover:text-white transition-all ${
+                  refreshing ? 'animate-spin text-amber-400' : ''
+                }`}
+                title="รีเฟรชข้อมูล"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={handleResetAllCheckins}
+                disabled={refreshing}
+                className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 text-xs font-bold transition-all active:scale-95"
+                title="ล้างประวัติการลงทะเบียนทั้งหมด"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>ล้างประวัติทั้งหมด</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

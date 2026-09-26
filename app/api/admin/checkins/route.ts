@@ -51,3 +51,28 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch checkin list' }, { status: 500 });
   }
 }
+
+// POST: ล้างประวัติการลงทะเบียนทั้งหมด (Admin Only)
+export async function POST() {
+  const session = await getCurrentSession();
+  if (!session || session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Unauthorized (Admin only)' }, { status: 403 });
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.luckyDrawWinner.deleteMany({}),
+      prisma.couponRedemption.deleteMany({}),
+      prisma.coupon.updateMany({ data: { currentRedeemed: 0 } }),
+      prisma.user.updateMany({
+        where: { role: 'PARTICIPANT' },
+        data: { isCheckedIn: false, checkedInAt: null },
+      }),
+    ]);
+
+    return NextResponse.json({ success: true, message: 'ล้างข้อมูลการลงทะเบียนและสิทธิ์กิจกรรมทั้งหมดเรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error('Error resetting checkins:', error);
+    return NextResponse.json({ error: 'เกิดข้อผิดพลาดในการล้างข้อมูล' }, { status: 500 });
+  }
+}
