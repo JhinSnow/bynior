@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ScanLine, Award, Film, LogOut, Shield, Clapperboard, Star } from 'lucide-react';
+import { ScanLine, Award, Film, LogOut, Shield, Clapperboard, Star, Users } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -64,6 +64,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       icon: ScanLine,
     },
     {
+      name: 'ตรวจสอบการลงทะเบียน',
+      href: '/admin/checkins',
+      icon: Users,
+    },
+    {
       name: 'จัดการกิจกรรม & สุ่มรางวัล',
       href: '/admin/activities',
       icon: Award,
@@ -110,7 +115,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Tab Navigation */}
-        <div className="max-w-4xl mx-auto mt-3 grid grid-cols-2 gap-2">
+        <div className="max-w-4xl mx-auto mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
             const Icon = tab.icon;
