@@ -936,70 +936,47 @@ export default function EndCreditTheaterPage() {
               opacity: photoLayout.opacity,
             }}
           >
-            <div
-              className={`bg-neutral-950/80 rounded-3xl shadow-2xl flex flex-col ${
-                photoLayout.isCentered ? 'p-6' : 'p-4'
-              }`}
-            >
-              <div
-                className={`w-full aspect-[3/4] bg-neutral-950 rounded-2xl flex flex-col items-center justify-center text-amber-300 relative overflow-hidden ${
-                  !photoLoadError
-                    ? 'border-2 border-amber-400/50 shadow-2xl'
-                    : 'border-2 border-dashed border-amber-500/50'
-                }`}
-              >
-                {!photoLoadError ? (
-                  <img
-                    src={photoUrl}
-                    alt="Memories of Byenior 2026"
-                    className="w-full h-full object-cover rounded-2xl"
-                    onError={() => setPhotoLoadError(true)}
-                  />
-                ) : (
+            <div className="w-full aspect-[3/4] bg-neutral-950 rounded-2xl flex flex-col items-center justify-center text-amber-300 relative overflow-hidden border-2 border-amber-400/50 shadow-2xl">
+              {!photoLoadError ? (
+                <img
+                  src={photoUrl}
+                  alt="Memories of Byenior 2026"
+                  className="w-full h-full object-cover rounded-2xl"
+                  onError={() => setPhotoLoadError(true)}
+                />
+              ) : (
+                <div
+                  className={`flex flex-col items-center justify-center ${
+                    photoLayout.isCentered ? 'gap-8 p-6' : 'gap-5 p-3'
+                  }`}
+                >
                   <div
-                    className={`flex flex-col items-center justify-center ${
-                      photoLayout.isCentered ? 'gap-8 p-6' : 'gap-5 p-3'
+                    className={`rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl ${
+                      photoLayout.isCentered ? 'w-36 h-36 border-amber-300' : 'w-24 h-24 border-amber-400/60'
                     }`}
                   >
-                    <div
-                      className={`rounded-full bg-neutral-900 border-2 border-amber-400 flex items-center justify-center shadow-2xl ${
-                        photoLayout.isCentered ? 'w-36 h-36 border-amber-300' : 'w-24 h-24 border-amber-400/60'
+                    <ImageIcon className={`${photoLayout.isCentered ? 'w-20 h-20 text-amber-300' : 'w-12 h-12 text-amber-400'}`} />
+                  </div>
+                  <div className="text-center px-4 font-luxurious">
+                    <p
+                      className={`font-black tracking-widest uppercase text-amber-300 ${
+                        photoLayout.isCentered ? 'text-4xl tracking-[0.2em]' : 'text-2xl'
                       }`}
                     >
-                      <ImageIcon className={`${photoLayout.isCentered ? 'w-20 h-20 text-amber-300' : 'w-12 h-12 text-amber-400'}`} />
-                    </div>
-                    <div className="text-center px-4 font-luxurious">
-                      <p
-                        className={`font-black tracking-widest uppercase text-amber-300 ${
-                          photoLayout.isCentered ? 'text-4xl tracking-[0.2em]' : 'text-2xl'
-                        }`}
-                      >
-                        {photoLayout.isCentered ? 'FINAL MEMORIES PHOTO' : 'PHOTO PLACEHOLDER'}
-                      </p>
-                      <p
-                        className={`text-neutral-400 tracking-wider ${
-                          photoLayout.isCentered ? 'text-lg mt-3 uppercase' : 'text-sm mt-2'
-                        }`}
-                      >
-                        {photoLayout.isCentered
-                          ? 'FACULTY OF SCIENCE • CLASS OF 2026'
-                          : 'MEMORIES OF BYENIOR 2026'}
-                      </p>
-                    </div>
+                      {photoLayout.isCentered ? 'FINAL MEMORIES PHOTO' : 'PHOTO PLACEHOLDER'}
+                    </p>
+                    <p
+                      className={`text-neutral-400 tracking-wider ${
+                        photoLayout.isCentered ? 'text-lg mt-3 uppercase' : 'text-sm mt-2'
+                      }`}
+                    >
+                      {photoLayout.isCentered
+                        ? 'FACULTY OF SCIENCE • CLASS OF 2026'
+                        : 'MEMORIES OF BYENIOR 2026'}
+                    </p>
                   </div>
-                )}
-              </div>
-              <div
-                className={`mt-4 flex items-center justify-between text-neutral-400 font-luxurious px-2 ${
-                  photoLayout.isCentered ? 'text-sm' : 'text-xs'
-                }`}
-              >
-                <span className="flex items-center gap-1.5 text-amber-400 font-semibold">
-                  <Sparkles className={`${photoLayout.isCentered ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                  <span>{photoLayout.isCentered ? 'Grand Finale Showcase' : 'Sci-lywood Archives'}</span>
-                </span>
-                <span>{photoLayout.isCentered ? 'BYENIOR 2026' : 'ROLL #01'}</span>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}
