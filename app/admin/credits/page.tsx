@@ -31,8 +31,8 @@ interface StaffGroup {
 
 const SONG_1_ID = 'KQQ5YszMNfc'; // เมื่อถูกค้นพบ - FREEHAND
 const SONG_1_TITLE = 'เมื่อถูกค้นพบ - FREEHAND';
-const SONG_2_ID = 'xFHNWJVsjmY'; // If I Can Stop One Heart From Breaking - HOYO-MiX (Robin / Chevy)
-const SONG_2_TITLE = 'If I Can Stop One Heart From Breaking - HOYO-MiX';
+const SONG_2_ID = 'ouKiGEKnPso'; // Had I Not Seen the Sun - HOYO-MiX (Robin / Chevy)
+const SONG_2_TITLE = 'Had I Not Seen the Sun - HOYO-MiX';
 
 export default function EndCreditTheaterPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
