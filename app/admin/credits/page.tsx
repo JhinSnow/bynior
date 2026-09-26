@@ -937,8 +937,8 @@ export default function EndCreditTheaterPage() {
             }}
           >
             <div
-              className={`bg-neutral-900 border-4 border-amber-400 rounded-3xl shadow-2xl flex flex-col ${
-                photoLayout.isCentered ? 'p-8 ring-4 ring-amber-400/20' : 'p-5'
+              className={`bg-neutral-950/80 rounded-3xl shadow-2xl flex flex-col ${
+                photoLayout.isCentered ? 'p-6' : 'p-4'
               }`}
             >
               <div
