@@ -41,6 +41,7 @@ export default function EndCreditTheaterPage() {
 
   // Theater state
   const [isPlaying, setIsPlaying] = useState(false);
+  const isPlayingRef = useRef<boolean>(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -137,6 +138,13 @@ export default function EndCreditTheaterPage() {
           },
           onStateChange: (event: any) => {
             // YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
+            if (event.data === 1 && !isPlayingRef.current) {
+              try {
+                event.target.pauseVideo();
+              } catch {}
+              return;
+            }
+
             const activeIdx = currentSongIndexRef.current;
             if (event.data === 1) {
               if (activeIdx === 1) {
@@ -398,6 +406,7 @@ export default function EndCreditTheaterPage() {
 
   // Start Playback
   const handleStartPlay = () => {
+    isPlayingRef.current = true;
     setIsPlaying(true);
     setIsPaused(false);
     setIsCompleted(false);
@@ -463,19 +472,22 @@ export default function EndCreditTheaterPage() {
   // Reset
   const handleReset = () => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    isPlayingRef.current = false;
     setIsPlaying(false);
     setIsPaused(false);
     setIsCompleted(false);
     setCurrentSongIndex(1);
     currentSongIndexRef.current = 1;
+    setSong1Status('Ready');
+    setSong2Status('Unloaded');
     setOffsetY(1920);
     virtualElapsedRef.current = 0;
     setProgressPercent(0);
     progressRef.current = 0;
     lastTimestampRef.current = null;
     try {
-      playerRef.current?.stopVideo();
-      playerRef.current?.seekTo(0);
+      playerRef.current?.pauseVideo();
+      playerRef.current?.cueVideoById(SONG_1_ID, 0);
     } catch {}
     setControlsVisible(true);
     setPhotoLayout({
@@ -820,6 +832,39 @@ export default function EndCreditTheaterPage() {
           <div className="flex gap-6 mt-8 text-xs text-slate-500">
             <span>ผู้เข้าร่วมงาน: {participants.length} คน</span>
             <span>ฝ่ายดำเนินงาน: {staffGroups.reduce((acc, g) => acc + g.members.length, 0)} คน</span>
+          </div>
+        </div>
+      )}
+
+      {/* Completed / Finished Screen Overlay */}
+      {isCompleted && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md p-6 text-center animate-fade-in">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-amber-400/20 border-2 border-amber-400 flex items-center justify-center text-amber-300 shadow-2xl">
+            <Star className="w-10 h-10 fill-amber-300 text-amber-300" />
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-amber-400 tracking-widest mb-3 uppercase">
+            END OF CREDITS
+          </h2>
+          <p className="text-base text-neutral-300 max-w-md mb-8">
+            การฉาย End Credit เสร็จสมบูรณ์แล้ว
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <button
+              onClick={handleReset}
+              className="px-8 py-4 rounded-full bg-amber-400 hover:bg-amber-300 active:scale-95 text-black font-black text-lg tracking-wider uppercase shadow-2xl transition-all flex items-center gap-2.5 border-2 border-amber-300"
+            >
+              <RotateCcw className="w-5 h-5" />
+              <span>ฉายใหม่อีกครั้ง (Replay)</span>
+            </button>
+
+            <Link
+              href="/admin/activities"
+              className="px-8 py-4 rounded-full bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-200 font-bold text-lg tracking-wider shadow-xl transition-all flex items-center gap-2.5 border border-neutral-700"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>กลับหน้าหลัก Admin</span>
+            </Link>
           </div>
         </div>
       )}
