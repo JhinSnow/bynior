@@ -8,6 +8,8 @@ interface DynamicQRModalProps {
   couponId: string;
   couponName: string;
   storeName: string;
+  remainingUses?: number;
+  maxUsesPerUser?: number;
   onClose: () => void;
   onRedeemedSuccess?: () => void;
 }
@@ -16,6 +18,8 @@ export function DynamicQRModal({
   couponId,
   couponName,
   storeName,
+  remainingUses,
+  maxUsesPerUser,
   onClose,
 }: DynamicQRModalProps) {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
@@ -96,10 +100,17 @@ export function DynamicQRModal({
 
         {/* Header */}
         <div className="mb-4 pt-2">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black bg-amber-400 text-black mb-2 uppercase tracking-widest">
-            <ShieldCheck className="w-3.5 h-3.5 text-black" />
-            Dynamic VIP Pass
-          </span>
+          <div className="flex items-center justify-center gap-1.5 mb-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black bg-amber-400 text-black uppercase tracking-widest">
+              <ShieldCheck className="w-3.5 h-3.5 text-black" />
+              Dynamic VIP Pass
+            </span>
+            {maxUsesPerUser !== undefined && maxUsesPerUser > 1 && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                เหลือ {remainingUses} / {maxUsesPerUser} รอบ
+              </span>
+            )}
+          </div>
           <h3 className="text-xl font-black text-white line-clamp-1">{couponName}</h3>
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">{storeName}</p>
         </div>

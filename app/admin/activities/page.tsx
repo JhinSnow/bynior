@@ -17,7 +17,7 @@ export default function ActivitiesPage() {
 
   // Coupon CRUD states
   const [coupons, setCoupons] = useState<any[]>([]);
-  const [newCoupon, setNewCoupon] = useState({ name: '', storeName: '', description: '' });
+  const [newCoupon, setNewCoupon] = useState({ name: '', storeName: '', description: '', maxUsesPerUser: 1 });
   const [creatingCoupon, setCreatingCoupon] = useState(false);
 
   const fetchLuckyData = useCallback(async () => {
@@ -119,10 +119,13 @@ export default function ActivitiesPage() {
       const res = await fetch('/api/admin/coupons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCoupon),
+        body: JSON.stringify({
+          ...newCoupon,
+          maxUsesPerUser: Number(newCoupon.maxUsesPerUser) || 1,
+        }),
       });
       if (res.ok) {
-        setNewCoupon({ name: '', storeName: '', description: '' });
+        setNewCoupon({ name: '', storeName: '', description: '', maxUsesPerUser: 1 });
         fetchCoupons();
       }
     } finally {
@@ -292,7 +295,7 @@ export default function ActivitiesPage() {
               <span>เพิ่มร้านค้าและเมนูอาหารใหม่</span>
             </h3>
 
-            <form onSubmit={handleCreateCoupon} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <form onSubmit={handleCreateCoupon} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <input
                 type="text"
                 required
@@ -316,7 +319,19 @@ export default function ActivitiesPage() {
                 onChange={(e) => setNewCoupon({ ...newCoupon, description: e.target.value })}
                 className="px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-2xl text-xs text-white"
               />
-              <div className="sm:col-span-3 text-right">
+              <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-700 rounded-2xl px-3 py-2">
+                <span className="text-[11px] text-amber-300 font-bold shrink-0">จำนวนสิทธิ์/คน:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  required
+                  value={newCoupon.maxUsesPerUser}
+                  onChange={(e) => setNewCoupon({ ...newCoupon, maxUsesPerUser: parseInt(e.target.value) || 1 })}
+                  className="w-full bg-transparent text-xs text-white font-bold text-center focus:outline-none"
+                />
+              </div>
+              <div className="sm:col-span-4 text-right">
                 <button
                   type="submit"
                   disabled={creatingCoupon}
@@ -339,9 +354,14 @@ export default function ActivitiesPage() {
                   className="p-4 bg-neutral-900 border border-neutral-800 rounded-2xl flex items-center justify-between"
                 >
                   <div>
-                    <h4 className="text-sm font-black text-white">{c.name}</h4>
-                    <p className="text-xs text-neutral-400">
-                      ร้าน: {c.storeName} • มีผู้ใช้สิทธิ์แล้ว {c._count?.redemptions || 0} คน
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-black text-white">{c.name}</h4>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        {c.maxUsesPerUser || 1} สิทธิ์/คน
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      ร้าน: {c.storeName} • มีผู้ใช้สิทธิ์แล้ว {c._count?.redemptions || 0} ครั้ง
                     </p>
                   </div>
                   <button

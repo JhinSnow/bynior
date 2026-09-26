@@ -51,21 +51,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ไม่พบรายการคูปองนี้' }, { status: 404 });
     }
 
-    // ตรวจสอบว่าเคยแลกไปแล้วหรือยัง
-    const existing = await prisma.couponRedemption.findUnique({
+    // ตรวจสอบจำนวนครั้งที่เคยแลกไปแล้ว
+    const usedCount = await prisma.couponRedemption.count({
       where: {
-        unique_user_coupon_redemption: {
-          userId,
-          couponId,
-        },
+        userId,
+        couponId,
       },
     });
 
-    if (existing) {
+    const maxUses = coupon.maxUsesPerUser || 1;
+
+    if (usedCount >= maxUses) {
       return NextResponse.json(
         {
-          error: 'คูปองนี้ถูกใช้งานไปแล้ว!',
-          redeemedAt: existing.redeemedAt,
+          error: `คูปองนี้ถูกใช้งานครบสิทธิ์แล้ว (${usedCount}/${maxUses} รอบ)`,
           user: { fullName: user.fullName, studentId: user.studentId },
           coupon: { name: coupon.name, storeName: coupon.storeName },
         },
@@ -87,23 +86,24 @@ export async function POST(req: Request) {
           id: coupon.id,
           name: coupon.name,
           storeName: coupon.storeName,
+          usedCount,
+          maxUses,
+          currentRound: usedCount + 1,
         },
       });
     }
 
     // กรณี action = CONFIRM_REDEEM: ตัดสิทธิ์ด้วย Database ACID Transaction
     const result = await prisma.$transaction(async (tx) => {
-      // ตรวจสอบซ้ำภายใน Transaction กัน Race condition (Double-redemption)
-      const doubleCheck = await tx.couponRedemption.findUnique({
+      // ตรวจสอบซ้ำภายใน Transaction กัน Race condition
+      const currentUsed = await tx.couponRedemption.count({
         where: {
-          unique_user_coupon_redemption: {
-            userId,
-            couponId,
-          },
+          userId,
+          couponId,
         },
       });
 
-      if (doubleCheck) {
+      if (currentUsed >= maxUses) {
         throw new Error('ALREADY_REDEEMED');
       }
 
@@ -122,13 +122,15 @@ export async function POST(req: Request) {
         data: { currentRedeemed: { increment: 1 } },
       });
 
-      return redemption;
+      return { redemption, round: currentUsed + 1 };
     });
 
     return NextResponse.json({
       success: true,
-      message: 'ตัดสิทธิ์คูปองและบันทึกข้อมูลเรียบร้อยแล้ว',
-      redemption: result,
+      message: `ตัดสิทธิ์คูปองเรียบร้อยแล้ว (รอบที่ ${result.round}/${maxUses})`,
+      redemption: result.redemption,
+      round: result.round,
+      maxUses,
       user: { fullName: user.fullName, studentId: user.studentId },
       coupon: { name: coupon.name, storeName: coupon.storeName },
     });

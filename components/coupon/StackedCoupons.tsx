@@ -10,6 +10,9 @@ export interface CouponItem {
   name: string;
   storeName: string;
   description?: string | null;
+  maxUsesPerUser: number;
+  usedCount: number;
+  remainingUses: number;
   isRedeemed: boolean;
   redeemedAt?: string | null;
 }
@@ -179,18 +182,25 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
                       )}
                     </div>
 
-                    {/* Bottom Action / Status Tag */}
-                    <div className="text-[11px] font-bold flex items-center">
+                      {/* Bottom Action / Status Tag */}
+                    <div className="text-[11px] font-bold flex items-center gap-2">
                       {coupon.isRedeemed ? (
                         <span className="text-neutral-400 flex items-center gap-1.5 bg-neutral-900 px-3 py-1 rounded-full border border-neutral-800">
                           <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500" />
-                          <span>ใช้สิทธิ์รับอาหารแล้ว</span>
+                          <span>ใช้ครบ {coupon.maxUsesPerUser} รอบแล้ว</span>
                         </span>
                       ) : (
-                        <span className="text-amber-300 bg-black/60 px-3.5 py-1 rounded-full border border-amber-500/50 flex items-center gap-1.5 shadow-sm">
-                          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                          <span>แตะเพื่อเปิด QR Code รับอาหาร</span>
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-amber-300 bg-black/60 px-3 py-1 rounded-full border border-amber-500/50 flex items-center gap-1.5 shadow-sm">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                            <span>แตะเพื่อเปิด QR Code</span>
+                          </span>
+                          {coupon.maxUsesPerUser > 1 && (
+                            <span className="bg-amber-400/90 text-black px-2.5 py-0.5 rounded-full font-black text-[10px] shadow-sm">
+                              เหลือ {coupon.remainingUses}/{coupon.maxUsesPerUser} รอบ
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -202,8 +212,13 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
                         <CheckCircle2 className="w-7 h-7" />
                       </div>
                     ) : (
-                      <div className="w-14 h-14 rounded-2xl bg-amber-400 text-black flex items-center justify-center border-2 border-black shadow-lg transition-transform hover:scale-105 active:scale-95">
-                        <QrCode className="w-7 h-7 stroke-[2.5]" />
+                      <div className="w-14 h-14 rounded-2xl bg-amber-400 text-black flex flex-col items-center justify-center border-2 border-black shadow-lg transition-transform hover:scale-105 active:scale-95">
+                        <QrCode className="w-6 h-6 stroke-[2.5]" />
+                        {coupon.maxUsesPerUser > 1 && (
+                          <span className="text-[9px] font-black leading-none mt-0.5">
+                            {coupon.remainingUses}x
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -220,6 +235,8 @@ export function StackedCoupons({ coupons, onRefresh }: StackedCouponsProps) {
           couponId={selectedCoupon.id}
           couponName={selectedCoupon.name}
           storeName={selectedCoupon.storeName}
+          remainingUses={selectedCoupon.remainingUses}
+          maxUsesPerUser={selectedCoupon.maxUsesPerUser}
           onClose={() => setSelectedCoupon(null)}
           onRedeemedSuccess={() => {
             setSelectedCoupon(null);

@@ -122,7 +122,7 @@ export default function WalletPage() {
                 สิทธิ์คงเหลือ
               </span>
               <span className="text-xl font-black text-amber-400">
-                {coupons.filter((c) => !c.isRedeemed).length}
+                {coupons.reduce((sum, c) => sum + (c.remainingUses !== undefined ? c.remainingUses : (c.isRedeemed ? 0 : 1)), 0)}
                 <span className="text-xs text-neutral-400 font-normal ml-1">สิทธิ์</span>
               </span>
             </div>

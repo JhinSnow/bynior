@@ -14,6 +14,9 @@ interface VerifyData {
     id: string;
     name: string;
     storeName: string;
+    usedCount?: number;
+    maxUses?: number;
+    currentRound?: number;
   };
 }
 
@@ -382,10 +385,17 @@ export default function StaffScannerPage() {
               </div>
 
               <div className="border-t border-neutral-800 pt-2">
-                <span className="text-[10px] text-amber-400 block uppercase font-bold tracking-wider">
-                  เมนู / ร้านค้า
-                </span>
-                <p className="text-sm font-bold text-amber-300">{verifyModal.coupon.name}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-amber-400 block uppercase font-bold tracking-wider">
+                    เมนู / ร้านค้า
+                  </span>
+                  {verifyModal.coupon.maxUses && verifyModal.coupon.maxUses > 1 && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-black">
+                      สิทธิ์รอบที่ {verifyModal.coupon.currentRound} / {verifyModal.coupon.maxUses}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm font-bold text-amber-300 mt-0.5">{verifyModal.coupon.name}</p>
                 <p className="text-xs text-neutral-400">{verifyModal.coupon.storeName}</p>
               </div>
             </div>

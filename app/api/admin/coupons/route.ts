@@ -7,6 +7,7 @@ const couponSchema = z.object({
   name: z.string().min(1),
   storeName: z.string().min(1),
   description: z.string().optional(),
+  maxUsesPerUser: z.number().int().min(1).default(1),
   totalQuota: z.number().nullable().optional(),
   isActive: z.boolean().default(true),
 });

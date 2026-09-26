@@ -19,14 +19,24 @@ export async function GET() {
       },
     });
 
-    const userCoupons = coupons.map((c) => ({
-      id: c.id,
-      name: c.name,
-      storeName: c.storeName,
-      description: c.description,
-      isRedeemed: c.redemptions.length > 0,
-      redeemedAt: c.redemptions[0]?.redeemedAt || null,
-    }));
+    const userCoupons = coupons.map((c) => {
+      const maxUses = c.maxUsesPerUser || 1;
+      const usedCount = c.redemptions.length;
+      const remainingUses = Math.max(0, maxUses - usedCount);
+      const isRedeemed = remainingUses === 0;
+
+      return {
+        id: c.id,
+        name: c.name,
+        storeName: c.storeName,
+        description: c.description,
+        maxUsesPerUser: maxUses,
+        usedCount,
+        remainingUses,
+        isRedeemed,
+        redeemedAt: c.redemptions[c.redemptions.length - 1]?.redeemedAt || null,
+      };
+    });
 
     return NextResponse.json({ coupons: userCoupons });
   } catch (error: any) {

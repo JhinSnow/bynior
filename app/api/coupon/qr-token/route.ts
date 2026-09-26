@@ -32,18 +32,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'ไม่พบคูปองนี้ หรือคูปองปิดใช้งานแล้ว' }, { status: 404 });
     }
 
-    // ตรวจสอบว่าเคยแลกไปแล้วหรือยัง
-    const existing = await prisma.couponRedemption.findUnique({
+    // ตรวจสอบว่าใช้สิทธิ์ครบโควตาหรือยัง
+    const redemptionCount = await prisma.couponRedemption.count({
       where: {
-        unique_user_coupon_redemption: {
-          userId: session.userId,
-          couponId: couponId,
-        },
+        userId: session.userId,
+        couponId: couponId,
       },
     });
 
-    if (existing) {
-      return NextResponse.json({ error: 'คุณได้ใช้สิทธิ์คูปองนี้ไปแล้ว' }, { status: 400 });
+    const maxUses = coupon.maxUsesPerUser || 1;
+    if (redemptionCount >= maxUses) {
+      return NextResponse.json({ error: `คุณได้ใช้สิทธิ์คูปองนี้ครบ ${maxUses} รอบแล้ว` }, { status: 400 });
     }
 
     // สร้าง Signed HMAC-SHA256 Token อายุ 45 วินาที

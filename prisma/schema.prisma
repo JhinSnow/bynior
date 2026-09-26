@@ -55,18 +55,19 @@ model OrganizerCredit {
 }
 
 model Coupon {
-  id             String    @id @default(uuid()) @db.Uuid
-  name           String    @db.VarChar(150)
-  storeName      String    @db.VarChar(100)
-  description    String?   @db.Text
-  totalQuota     Int?      
-  currentRedeemed Int      @default(0)
-  isActive       Boolean   @default(true)
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String    @db.VarChar(150)
+  storeName       String    @db.VarChar(100)
+  description     String?   @db.Text
+  maxUsesPerUser  Int       @default(1)
+  totalQuota      Int?      
+  currentRedeemed Int       @default(0)
+  isActive        Boolean   @default(true)
   
-  redemptions    CouponRedemption[]
+  redemptions     CouponRedemption[]
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model CouponRedemption {
@@ -79,8 +80,7 @@ model CouponRedemption {
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   coupon         Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
 
-  // 1 User รับ 1 คูปองได้ครั้งเดียว
-  @@unique([userId, couponId], name: "unique_user_coupon_redemption")
+  @@index([userId, couponId])
   @@index([userId])
   @@index([couponId])
 }
