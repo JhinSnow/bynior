@@ -520,48 +520,37 @@ export default function EndCreditTheaterPage() {
       const deltaSec = (timestamp - lastTimestampRef.current) / 1000;
       lastTimestampRef.current = timestamp;
 
-      // ตรวจสอบสถานะและตำแหน่งเวลาจริงของ YouTube Player (ถ้ามี)
-      let playerState = -1;
+      // ตรวจสอบตำแหน่งเวลาจริงของ YouTube Player เมื่อกำลังเล่น
       let realAudioTime: number | null = null;
       try {
-        if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
-          playerState = playerRef.current.getPlayerState();
-        }
-        if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        if (
+          playerRef.current &&
+          typeof playerRef.current.getPlayerState === 'function' &&
+          playerRef.current.getPlayerState() === 1 &&
+          typeof playerRef.current.getCurrentTime === 'function'
+        ) {
           const ct = playerRef.current.getCurrentTime();
           if (typeof ct === 'number' && !isNaN(ct) && ct >= 0) {
-            if (currentSongIndexRef.current === 1) {
-              realAudioTime = ct;
-            } else {
-              realAudioTime = duration1Ref.current + ct;
-            }
+            realAudioTime = currentSongIndexRef.current === 1 ? ct : duration1Ref.current + ct;
           }
         }
       } catch {}
 
-      // ถ้าเล่นที่สปีดปกติ 1x และกำลังเชื่อมต่อกับ YouTube
-      if (speedRef.current === 1 && playerState !== -1) {
-        if (playerState === 3) {
-          // กำลังบัฟเฟอร์ (Buffering): ให้หยุดการเลื่อน End Credit ชั่วคราวเพื่อรอเสียงเพลง
-          // ไม่เพิ่มเวลา virtualElapsedRef
-        } else if (playerState === 1 && realAudioTime !== null) {
-          // กำลังเล่นเพลง (Playing): ซิงค์ virtualElapsed เข้าหา realAudioTime อย่างนุ่มนวล
-          const drift = realAudioTime - virtualElapsedRef.current;
-          if (Math.abs(drift) > 3) {
-            // หากเวลาต่างกันมากเกิน 3 วิ (เช่น หลังจากสลับเพลงหรือ seek) ให้กระโดดตามเพลง
-            virtualElapsedRef.current = realAudioTime;
-          } else {
-            // ดึงเข้าหาเวลาจริงทีละนิดอย่างนุ่มนวล (lerp) ร่วมกับการเดินหน้าปกติ
-            virtualElapsedRef.current += deltaSec + drift * 0.08;
-          }
-        } else {
-          // สถานะอื่นๆ เดินหน้าตาม delta ปกติ
-          virtualElapsedRef.current += deltaSec * speedRef.current;
+      // เลื่อนไปข้างหน้าอย่างต่อเนื่อง 100% สม่ำเสมอ ไม่มีการสั่งหยุด (Pause/Freeze) เด็ดขาด
+      // deltaSec ยังคงเดินหน้าตลอดเวลาเพื่อให้แอนิเมชันเนียนตา ไร้อาการสะดุด
+      let stepTime = deltaSec * speedRef.current;
+
+      if (speedRef.current === 1 && realAudioTime !== null) {
+        const drift = realAudioTime - virtualElapsedRef.current;
+        // ปรับเกลี่ยความเร็วอย่างแนบเนียนมาก (微调 ±5%) เพื่อให้ภาพจบพร้อมเพลง โดยที่สายตามองไม่ออกว่าเปลี่ยนสปีด
+        if (Math.abs(drift) < 5) {
+          stepTime += drift * 0.02;
+        } else if (Math.abs(drift) < 15) {
+          stepTime += drift * 0.05;
         }
-      } else {
-        // เมื่ออยู่ใน Debug Mode หรือปรับ Speed เร่งความเร็ว
-        virtualElapsedRef.current += deltaSec * speedRef.current;
       }
+
+      virtualElapsedRef.current += stepTime;
 
       const elapsed = virtualElapsedRef.current;
       const curTotalDuration = totalDurationRef.current;
