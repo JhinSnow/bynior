@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Camera, CheckCircle2, AlertCircle, RefreshCw, X, ShieldCheck, SwitchCamera, Upload, Keyboard } from 'lucide-react';
+import { Camera, CheckCircle2, AlertCircle, RefreshCw, X, ShieldCheck, SwitchCamera, Upload, Keyboard, Zap, Volume2 } from 'lucide-react';
 
 interface VerifyData {
   user: {
@@ -26,7 +26,12 @@ export default function StaffScannerPage() {
   const [verifyModal, setVerifyModal] = useState<VerifyData | null>(null);
   const [currentToken, setCurrentToken] = useState<string>('');
   const [actionLoading, setActionLoading] = useState(false);
-  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string; sub?: string } | null>(null);
+
+  // โหมดสแกนด่วน (Auto-Redeem 1-Step) ตัดสิทธิ์อัตโนมัติทันทีที่สแกนติด
+  const [autoRedeem, setAutoRedeem] = useState<boolean>(true);
+  const autoRedeemRef = useRef<boolean>(true);
+  autoRedeemRef.current = autoRedeem;
 
   // Cameras list
   const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
@@ -53,7 +58,24 @@ export default function StaffScannerPage() {
       });
   }, []);
 
-  // เริ่มกล้อง
+  // ฟังก์ชันเล่นเสียง Beep สั้นๆ เมื่อตัดสิทธิ์สำเร็จ
+  const playBeep = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // โน้ต A5 สูง คมชัด
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+      if (navigator.vibrate) navigator.vibrate(80); // สั่นเตือนเบาๆ บนมือถือ
+    } catch {}
+  };
+
+  // เริ่มกล้อง (ปรับแต่งเพื่อความเร็วสูงสุด: FPS 12, ความละเอียด 720p และสแกนได้เต็มหน้าจอ)
   const startCamera = async (overrideCameraId?: string) => {
     setCameraError('');
     setFeedback(null);
@@ -64,20 +86,25 @@ export default function StaffScannerPage() {
     }
 
     try {
-      const html5QrCode = new Html5Qrcode('qr-reader-container');
+      const html5QrCode = new Html5Qrcode('qr-reader-container', {
+        verbose: false,
+        useBarCodeDetectorIfSupported: true, // ใช้ Native BarcodeDetector เร็วกว่า JS ภายในเครื่องถึง 5 เท่า
+      });
       scannerRef.current = html5QrCode;
 
       const camId = overrideCameraId || selectedCameraId;
-      const cameraConfig = camId ? camId : { facingMode: 'environment' };
+      const cameraConfig = camId
+        ? { deviceId: { exact: camId } }
+        : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } };
 
       await html5QrCode.start(
         cameraConfig,
         {
-          fps: 20,
+          fps: 12, // 12 FPS ป้องกัน CPU โหลดเกิน ทำให้ประมวลผลแต่ละเฟรมได้ไวกว่าเดิม
+          // ไม่กำหนด qrbox ที่แคบเกินไป เพื่อให้อ่าน QR Code ได้ทั่วทั้งภาพทันที ไม่ต้องเล็งกลางจอเป๊ะๆ
           qrbox: (viewfinderWidth, viewfinderHeight) => {
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const edge = Math.floor(minEdge * 0.75);
-            return { width: edge, height: edge };
+            return { width: Math.floor(minEdge * 0.9), height: Math.floor(minEdge * 0.9) };
           },
           aspectRatio: 1.0,
         },
@@ -130,16 +157,22 @@ export default function StaffScannerPage() {
     }
   };
 
-  // ตรวจสอบ Token เมื่อสแกนติด
+  // ตรวจสอบหรือตัดสิทธิ์ Token เมื่อสแกนติด
   const handleScanSuccess = async (scannedToken: string) => {
-    setCurrentToken(scannedToken.trim());
+    const cleanToken = scannedToken.trim();
+    setCurrentToken(cleanToken);
     setActionLoading(true);
 
+    const isAuto = autoRedeemRef.current;
+
     try {
+      // ถ้าเปิดโหมด Auto-Redeem: ยิง CONFIRM_REDEEM จบในรอบเดียวทันที (One-Shot Redeem)
+      const action = isAuto ? 'CONFIRM_REDEEM' : 'VERIFY';
+
       const res = await fetch('/api/staff/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: scannedToken.trim(), action: 'VERIFY' }),
+        body: JSON.stringify({ token: cleanToken, action }),
       });
 
       const data = await res.json();
@@ -150,20 +183,35 @@ export default function StaffScannerPage() {
         });
         setTimeout(() => {
           isVerifyingRef.current = false;
-        }, 2000);
+        }, 1800);
         return;
       }
 
-      // แสดง Popup ยืนยันข้อมูล
-      setVerifyModal({
-        user: data.user,
-        coupon: data.coupon,
-      });
+      if (isAuto) {
+        // สำเร็จทันทีใน 1 สเต็ป
+        playBeep();
+        setFeedback({
+          type: 'success',
+          message: `ตัดสิทธิ์สำเร็จ: ${data.coupon.name}`,
+          sub: `${data.user.fullName} (${data.user.studentId}) • รอบที่ ${data.round}/${data.maxUses}`,
+        });
+        setCurrentToken('');
+        // คูลดาวน์เพียง 1.2 วินาทีเพื่อให้เห็นข้อความ แล้วพร้อมสแกนคนถัดไปทันที
+        setTimeout(() => {
+          isVerifyingRef.current = false;
+        }, 1200);
+      } else {
+        // โหมดปกติ: แสดง Popup ให้แอดมินตรวจดูก่อนกดยืนยัน
+        setVerifyModal({
+          user: data.user,
+          coupon: data.coupon,
+        });
+      }
     } catch {
       setFeedback({ type: 'error', message: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
       setTimeout(() => {
         isVerifyingRef.current = false;
-      }, 2000);
+      }, 1800);
     } finally {
       setActionLoading(false);
     }
@@ -177,7 +225,7 @@ export default function StaffScannerPage() {
     setActionLoading(true);
     setFeedback(null);
     try {
-      const html5QrCode = new Html5Qrcode('qr-reader-container');
+      const html5QrCode = new Html5Qrcode('qr-reader-container', { useBarCodeDetectorIfSupported: true });
       const decoded = await html5QrCode.scanFile(file, true);
       handleScanSuccess(decoded);
     } catch (err) {
@@ -187,7 +235,7 @@ export default function StaffScannerPage() {
     }
   };
 
-  // กดยืนยันการตัดสิทธิ์
+  // กดยืนยันการตัดสิทธิ์ (กรณีใช้โหมดตรวจสอบก่อน)
   const handleConfirmRedeem = async () => {
     if (!currentToken) return;
     setActionLoading(true);
@@ -206,9 +254,11 @@ export default function StaffScannerPage() {
           message: data.error || 'เกิดข้อผิดพลาดในการตัดสิทธิ์',
         });
       } else {
+        playBeep();
         setFeedback({
           type: 'success',
-          message: `ยืนยันรับอาหารเรียบร้อย: ${data.coupon.name} (${data.user.fullName})`,
+          message: `ยืนยันรับอาหารเรียบร้อย: ${data.coupon.name}`,
+          sub: `${data.user.fullName} (${data.user.studentId}) • รอบที่ ${data.round}/${data.maxUses}`,
         });
       }
 
@@ -220,7 +270,7 @@ export default function StaffScannerPage() {
       setActionLoading(false);
       setTimeout(() => {
         isVerifyingRef.current = false;
-      }, 1500);
+      }, 1200);
     }
   };
 
@@ -234,9 +284,38 @@ export default function StaffScannerPage() {
     <div className="space-y-6">
       <div className="bg-neutral-950 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl text-center">
         <h2 className="text-xl font-black text-white mb-1 uppercase tracking-wider">เครื่องสแกนคูปองอาหาร</h2>
-        <p className="text-xs text-neutral-400 mb-6">
+        <p className="text-xs text-neutral-400 mb-4">
           สแกน Dynamic QR Code บนหน้าจอมือถือของผู้เข้าร่วมงานเพื่อตัดสิทธิ์
         </p>
+
+        {/* Mode Selector: สแกนด่วน (Auto Redeem) vs ตรวจสอบก่อน (Verify First) */}
+        <div className="flex items-center justify-center gap-2 mb-5 max-w-sm mx-auto">
+          <button
+            type="button"
+            onClick={() => setAutoRedeem(true)}
+            className={`flex-1 py-2 px-3 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border transition-all ${
+              autoRedeem
+                ? 'bg-amber-400 text-black border-amber-300 shadow-md'
+                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <Zap className={`w-3.5 h-3.5 ${autoRedeem ? 'fill-black' : 'text-neutral-500'}`} />
+            <span>สแกนด่วน (Auto)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAutoRedeem(false)}
+            className={`flex-1 py-2 px-3 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 border transition-all ${
+              !autoRedeem
+                ? 'bg-neutral-800 text-amber-300 border-amber-500/40 shadow-md'
+                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>ตรวจสอบก่อนกด</span>
+          </button>
+        </div>
 
         {/* Camera Area */}
         <div className="relative max-w-sm mx-auto aspect-square bg-black rounded-3xl overflow-hidden border-2 border-amber-500/40 shadow-2xl flex flex-col items-center justify-center">
@@ -336,18 +415,21 @@ export default function StaffScannerPage() {
         {/* Global Feedback message */}
         {feedback && (
           <div
-            className={`mt-4 p-4 rounded-2xl max-w-sm mx-auto text-xs font-semibold flex items-center gap-2.5 transition-all ${
+            className={`mt-4 p-4 rounded-2xl max-w-sm mx-auto text-xs font-semibold flex items-center gap-3 transition-all text-left shadow-lg ${
               feedback.type === 'success'
-                ? 'bg-emerald-950/80 border border-emerald-500/40 text-emerald-200'
-                : 'bg-red-950/80 border border-red-500/40 text-red-200'
+                ? 'bg-emerald-950/90 border border-emerald-500/50 text-emerald-200'
+                : 'bg-red-950/90 border border-red-500/50 text-red-200'
             }`}
           >
             {feedback.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+              <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-400" />
             ) : (
-              <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
+              <AlertCircle className="w-6 h-6 shrink-0 text-red-400" />
             )}
-            <span>{feedback.message}</span>
+            <div>
+              <p className="font-bold text-sm text-white">{feedback.message}</p>
+              {feedback.sub && <p className="text-[11px] text-emerald-300/80 mt-0.5">{feedback.sub}</p>}
+            </div>
           </div>
         )}
       </div>

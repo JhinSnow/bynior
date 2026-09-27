@@ -38,10 +38,19 @@ export async function POST(req: Request) {
 
     const { uid: userId, cid: couponId } = payload;
 
-    // 2. ดึงข้อมูล User และ Coupon
-    const [user, coupon] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId } }),
-      prisma.coupon.findUnique({ where: { id: couponId } }),
+    // 2. ดึงข้อมูล User, Coupon และประวัติการแลกในรอบเดียว (Fast Concurrent Query)
+    const [user, coupon, usedCount] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, fullName: true, studentId: true },
+      }),
+      prisma.coupon.findUnique({
+        where: { id: couponId },
+        select: { id: true, name: true, storeName: true, maxUsesPerUser: true },
+      }),
+      prisma.couponRedemption.count({
+        where: { userId, couponId },
+      }),
     ]);
 
     if (!user) {
@@ -50,14 +59,6 @@ export async function POST(req: Request) {
     if (!coupon) {
       return NextResponse.json({ error: 'ไม่พบรายการคูปองนี้' }, { status: 404 });
     }
-
-    // ตรวจสอบจำนวนครั้งที่เคยแลกไปแล้ว
-    const usedCount = await prisma.couponRedemption.count({
-      where: {
-        userId,
-        couponId,
-      },
-    });
 
     const maxUses = coupon.maxUsesPerUser || 1;
 
@@ -127,7 +128,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `ตัดสิทธิ์คูปองเรียบร้อยแล้ว (รอบที่ ${result.round}/${maxUses})`,
+      message: `ตัดสิทธิ์เรียบร้อย (รอบที่ ${result.round}/${maxUses}): ${coupon.name}`,
       redemption: result.redemption,
       round: result.round,
       maxUses,
