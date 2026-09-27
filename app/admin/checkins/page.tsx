@@ -13,7 +13,11 @@ import {
   Ticket,
   Filter,
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  Edit2,
+  Trash2,
+  X,
+  Save
 } from 'lucide-react';
 
 interface Attendee {
@@ -35,7 +39,12 @@ export default function AdminCheckinsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'CHECKED_IN' | 'NOT_CHECKED_IN'>('ALL');
+  const [editingAttendee, setEditingAttendee] = useState<Attendee | null>(null);
+  const [editFullName, setEditFullName] = useState<string>('');
+  const [editLastName, setEditLastName] = useState<string>('');
+  const [editIsCheckedIn, setEditIsCheckedIn] = useState<boolean>(false);
+  const [savingEdit, setSavingEdit] = useState<boolean>(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const fetchCheckins = useCallback(async () => {
     try {
@@ -62,25 +71,104 @@ export default function AdminCheckinsPage() {
     fetchCheckins();
   };
 
-  const handleResetAllCheckins = async () => {
-    if (!confirm('⚠️ ยืนยันการล้างประวัติการลงทะเบียนทั้งหมดหรือไม่?\n\nการกระทำนี้จะ:\n- รีเซ็ตสถานะทุกคนเป็นยังไม่ลงทะเบียน\n- ล้างประวัติการรับรางวัล Lucky Draw\n- รีเซ็ตสิทธิ์คูปองอาหารทั้งหมด')) {
+  // เปิด Modal แก้ไขรายชื่อ
+  const handleOpenEditModal = (attendee: Attendee) => {
+    setEditingAttendee(attendee);
+    setEditFullName(attendee.fullName);
+    setEditLastName(attendee.lastName || '');
+    setEditIsCheckedIn(attendee.isCheckedIn);
+  };
+
+  // บันทึกการแก้ไขรายชื่อ
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAttendee) return;
+
+    if (!editFullName.trim()) {
+      alert('กรุณากรอกชื่อ-สกุล');
       return;
     }
 
-    setRefreshing(true);
+    setSavingEdit(true);
     try {
-      const res = await fetch('/api/admin/checkins', { method: 'POST' });
+      const res = await fetch('/api/admin/checkins', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingAttendee.id,
+          fullName: editFullName.trim(),
+          lastName: editLastName.trim() || editFullName.trim().split(/\s+/).pop(),
+          isCheckedIn: editIsCheckedIn,
+        }),
+      });
+
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'ล้างประวัติเรียบร้อยแล้ว');
+        setEditingAttendee(null);
         fetchCheckins();
       } else {
-        alert(data.error || 'เกิดข้อผิดพลาดในการล้างข้อมูล');
+        alert(data.error || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      }
+    } catch {
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // ล้างประวัติการลงทะเบียนของคนนี้คนเดียว
+  const handleResetSingleAttendee = async (attendee: Attendee) => {
+    if (
+      !confirm(
+        `ยืนยันการล้างประวัติการลงทะเบียนของ:\n"${attendee.fullName}" (${attendee.studentId}) หรือไม่?\n\n- สถานะจะเปลี่ยนเป็นยังไม่ลงทะเบียน\n- ประวัติคูปองและรางวัลของคนนี้จะถูกล้าง`
+      )
+    ) {
+      return;
+    }
+
+    setActionLoadingId(attendee.id);
+    try {
+      const res = await fetch(`/api/admin/checkins?id=${attendee.id}&action=reset`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchCheckins();
+      } else {
+        alert(data.error || 'เกิดข้อผิดพลาด');
       }
     } catch {
       alert('เครือข่ายขัดข้อง');
     } finally {
-      setRefreshing(false);
+      setActionLoadingId(null);
+    }
+  };
+
+  // ลบรายชื่อผู้เข้าร่วมงานคนนี้ออกจากระบบถาวร
+  const handleDeleteSingleAttendee = async (attendee: Attendee) => {
+    if (
+      !confirm(
+        `⚠️ คำเตือน: คุณต้องการลบรายชื่อ:\n"${attendee.fullName}" (${attendee.studentId})\nออกจากระบบอย่างถาวรหรือไม่?`
+      )
+    ) {
+      return;
+    }
+
+    setActionLoadingId(attendee.id);
+    try {
+      const res = await fetch(`/api/admin/checkins?id=${attendee.id}&action=delete`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchCheckins();
+      } else {
+        alert(data.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch {
+      alert('เครือข่ายขัดข้อง');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -212,16 +300,6 @@ export default function AdminCheckinsPage() {
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
-
-              <button
-                onClick={handleResetAllCheckins}
-                disabled={refreshing}
-                className="flex items-center gap-1.5 px-3 py-2.5 rounded-2xl bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-800/80 text-xs font-bold transition-all active:scale-95"
-                title="ล้างประวัติการลงทะเบียนทั้งหมด"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>ล้างประวัติทั้งหมด</span>
-              </button>
             </div>
           </div>
         </div>
@@ -313,12 +391,149 @@ export default function AdminCheckinsPage() {
                       <span>ยังไม่ลงทะเบียน</span>
                     </span>
                   )}
+
+                  {/* Individual Action Buttons: แก้ไข, ล้างประวัติรายคน, ลบออกจากระบบ */}
+                  <div className="flex items-center gap-1.5 pl-2 sm:border-l sm:border-neutral-800">
+                    {/* ปุ่มแก้ไขรายชื่อ */}
+                    <button
+                      onClick={() => handleOpenEditModal(attendee)}
+                      className="p-2 rounded-xl bg-neutral-800 hover:bg-amber-400 hover:text-black text-neutral-300 transition-all shadow-sm"
+                      title="แก้ไขรายชื่อ / สถานะ"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* ปุ่มล้างประวัติการลงทะเบียนของคนนี้ */}
+                    {attendee.isCheckedIn && (
+                      <button
+                        onClick={() => handleResetSingleAttendee(attendee)}
+                        disabled={actionLoadingId === attendee.id}
+                        className="p-2 rounded-xl bg-neutral-800 hover:bg-orange-950 text-neutral-400 hover:text-orange-400 border border-transparent hover:border-orange-800 transition-all shadow-sm"
+                        title="ล้างประวัติการลงทะเบียนของคนนี้"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {/* ปุ่มลบผู้เข้าร่วมงานคนนี้ออกจากระบบ */}
+                    <button
+                      onClick={() => handleDeleteSingleAttendee(attendee)}
+                      disabled={actionLoadingId === attendee.id}
+                      className="p-2 rounded-xl bg-neutral-800 hover:bg-red-950 text-neutral-400 hover:text-red-400 border border-transparent hover:border-red-800 transition-all shadow-sm"
+                      title="ลบรายชื่อออกจากระบบ"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit Attendee Modal */}
+      {editingAttendee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-black text-white">แก้ไขข้อมูลผู้เข้าร่วมงาน</h3>
+              </div>
+              <button
+                onClick={() => setEditingAttendee(null)}
+                className="p-1 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-neutral-400 font-bold mb-1">รหัสนักศึกษา</label>
+                <input
+                  type="text"
+                  disabled
+                  value={editingAttendee.studentId}
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-neutral-400 font-mono cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">ชื่อ-สกุล (เต็ม)</label>
+                <input
+                  type="text"
+                  required
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  placeholder="เช่น นายสมชาย ใจดี"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-amber-400 rounded-xl text-white focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-neutral-300 font-bold mb-1">นามสกุล (สำหรับตรวจเช็คชื่อ)</label>
+                <input
+                  type="text"
+                  value={editLastName}
+                  onChange={(e) => setEditLastName(e.target.value)}
+                  placeholder="เช่น ใจดี"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-amber-400 rounded-xl text-white focus:outline-none transition-colors"
+                />
+              </div>
+
+              <div className="pt-1">
+                <label className="block text-neutral-300 font-bold mb-2">สถานะการลงทะเบียนเข้างาน</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditIsCheckedIn(true)}
+                    className={`flex-1 py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all ${
+                      editIsCheckedIn
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>ลงทะเบียนแล้ว</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditIsCheckedIn(false)}
+                    className={`flex-1 py-2 rounded-xl font-bold flex items-center justify-center gap-1.5 border transition-all ${
+                      !editIsCheckedIn
+                        ? 'bg-red-500/20 text-red-400 border-red-500/40'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                    }`}
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>ยังไม่ลงทะเบียน</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 pt-3 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingAttendee(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-300 font-bold transition-all"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingEdit ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
