@@ -39,6 +39,7 @@ export default function AdminCheckinsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'CHECKED_IN' | 'NOT_CHECKED_IN'>('ALL');
   const [editingAttendee, setEditingAttendee] = useState<Attendee | null>(null);
   const [editFullName, setEditFullName] = useState<string>('');
   const [editLastName, setEditLastName] = useState<string>('');
